@@ -149,8 +149,19 @@ async function postScore(event) {
     p_pseudo: String(body.pseudo || ""),
     p_title: String(body.title || ""),
     p_avatar: String(body.avatar || "avatar-1"),
-    p_best_streak: Number(body.bestStreak || 0)
+    p_best_streak: Number(body.bestStreak || 0),
+    p_player_id: String(body.playerId || "")
   }, 201);
+}
+
+async function registerPlayer(event) {
+  const body = await readBody(event);
+  const data = await supabaseRpc("register_player", {
+    p_player_id: String(body.playerId || ""),
+    p_pseudo: String(body.pseudo || ""),
+    p_avatar: String(body.avatar || "avatar-1")
+  });
+  return json(200, data);
 }
 
 async function getChat(event) {
@@ -165,6 +176,7 @@ async function postChat(event) {
   const body = await readBody(event);
   const pseudo = String(body.pseudo || "").trim().slice(0, 18);
   const avatar = String(body.avatar || "avatar-1").trim().slice(0, 24);
+  const playerId = String(body.playerId || "").trim();
   const message = String(body.message || "").trim().slice(0, 240);
 
   if (!pseudo || !message) {
@@ -181,10 +193,67 @@ async function postChat(event) {
   const data = await supabaseFetch("/chat_messages", {
     method: "POST",
     headers: { Prefer: "return=representation" },
-    body: JSON.stringify({ pseudo, avatar, message })
+    body: JSON.stringify({ player_id: playerId || null, pseudo, avatar, message })
   });
 
   return json(201, { message: data[0] });
+}
+
+async function getPlayerProfile(event) {
+  const pseudo = String(event.queryStringParameters?.pseudo || "").trim().slice(0, 18);
+  const pseudoKey = pseudo.toLowerCase();
+  if (!pseudo) {
+    return json(400, { error: "Pseudo manquant." });
+  }
+
+  const [profileRows, rankedRows, chatRows] = await Promise.all([
+    supabaseFetch(
+      `/leaderboard_global?select=pseudo_key,pseudo,avatar,games_played,total_score,total_correct,total_questions,success_rate,average_score,best_game_percent,best_streak,last_played_at&pseudo_key=eq.${encodeURIComponent(pseudoKey)}&limit=1`
+    ),
+    supabaseFetch("/leaderboard_global?select=pseudo_key&limit=1000"),
+    supabaseFetch(`/chat_messages?select=id&pseudo_key=eq.${encodeURIComponent(pseudoKey)}`)
+  ]);
+
+  const row = profileRows[0];
+  const rank = rankedRows.findIndex((entry) => entry.pseudo_key === pseudoKey) + 1;
+
+  if (!row) {
+    return json(200, {
+      profile: {
+        pseudo,
+        avatar: "avatar-1",
+        rank: 0,
+        gamesPlayed: 0,
+        totalScore: 0,
+        totalCorrect: 0,
+        totalQuestions: 0,
+        successRate: 0,
+        averageScore: 0,
+        bestGamePercent: 0,
+        bestStreak: 0,
+        chatMessages: chatRows.length,
+        lastPlayedAt: null
+      }
+    });
+  }
+
+  return json(200, {
+    profile: {
+      pseudo: row.pseudo,
+      avatar: row.avatar,
+      rank,
+      gamesPlayed: row.games_played,
+      totalScore: row.total_score,
+      totalCorrect: row.total_correct,
+      totalQuestions: row.total_questions,
+      successRate: Number(row.success_rate),
+      averageScore: Number(row.average_score),
+      bestGamePercent: Number(row.best_game_percent),
+      bestStreak: Number(row.best_streak || 0),
+      chatMessages: chatRows.length,
+      lastPlayedAt: row.last_played_at
+    }
+  });
 }
 
 function requireAdmin(event) {
@@ -215,17 +284,16 @@ async function adminScores(event) {
 
 async function adminStats(event) {
   requireAdmin(event);
-  const [scores, votes, questions, chat, blocked] = await Promise.all([
-    supabaseFetch("/scores?select=id,pseudo", { headers: { Prefer: "count=exact" } }),
+  const [players, scores, votes, questions, chat, blocked] = await Promise.all([
+    supabaseFetch("/players?select=id,pseudo", { headers: { Prefer: "count=exact" } }),
+    supabaseFetch("/scores?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/votes?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/questions?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/chat_messages?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/blocked_pseudos?select=pseudo_key,pseudo,reason,created_at&order=created_at.desc")
   ]);
-  const pseudos = new Set(scores.map((score) => String(score.pseudo || "").trim().toLowerCase()).filter(Boolean));
-
   return json(200, {
-    players: pseudos.size,
+    players: players.length,
     games: scores.length,
     answeredQuestions: votes.length,
     questions: questions.length,
@@ -365,6 +433,14 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "POST" && path === "/scores") {
       return postScore(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/player/register") {
+      return registerPlayer(event);
+    }
+
+    if (event.httpMethod === "GET" && path === "/player") {
+      return getPlayerProfile(event);
     }
 
     if (event.httpMethod === "GET" && path === "/chat") {

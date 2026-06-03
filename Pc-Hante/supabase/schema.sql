@@ -58,14 +58,30 @@ create table if not exists public.blocked_pseudos (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.players (
+  id uuid primary key,
+  pseudo text not null,
+  pseudo_key text generated always as (lower(trim(pseudo))) stored unique,
+  avatar text not null default 'avatar-1',
+  created_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now()
+);
+
 create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),
+  player_id uuid references public.players(id) on delete set null,
   pseudo text not null,
   pseudo_key text generated always as (lower(trim(pseudo))) stored,
   avatar text not null default 'avatar-1',
   message text not null check (char_length(trim(message)) between 1 and 240),
   created_at timestamptz not null default now()
 );
+
+alter table public.scores
+  add column if not exists player_id uuid references public.players(id) on delete set null;
+
+alter table public.chat_messages
+  add column if not exists player_id uuid references public.players(id) on delete set null;
 
 create index if not exists votes_game_id_idx on public.votes (game_id);
 create index if not exists scores_day_idx on public.scores (day);
@@ -76,6 +92,7 @@ alter table public.questions enable row level security;
 alter table public.votes enable row level security;
 alter table public.scores enable row level security;
 alter table public.blocked_pseudos enable row level security;
+alter table public.players enable row level security;
 alter table public.chat_messages enable row level security;
 
 create or replace view public.leaderboard_global as
@@ -219,12 +236,79 @@ exception
 end;
 $$;
 
+create or replace function public.register_player(
+  p_player_id text,
+  p_pseudo text,
+  p_avatar text default 'avatar-1'
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_player_id uuid;
+  v_pseudo text;
+  v_avatar text;
+  v_existing public.players%rowtype;
+  v_player public.players%rowtype;
+begin
+  if nullif(trim(p_player_id), '') is null or nullif(trim(p_pseudo), '') is null then
+    raise exception 'Joueur invalide.';
+  end if;
+
+  v_player_id := p_player_id::uuid;
+  v_pseudo := left(trim(p_pseudo), 18);
+  v_avatar := left(coalesce(nullif(trim(p_avatar), ''), 'avatar-1'), 24);
+
+  if exists (
+    select 1 from public.blocked_pseudos where pseudo_key = lower(trim(v_pseudo))
+  ) then
+    raise exception 'Ce pseudo est bloque.';
+  end if;
+
+  select * into v_existing
+  from public.players
+  where id = v_player_id;
+
+  if found then
+    if v_existing.pseudo_key <> lower(trim(v_pseudo)) and exists (
+      select 1 from public.players
+      where pseudo_key = lower(trim(v_pseudo)) and id <> v_player_id
+    ) then
+      raise exception 'Ce pseudo est deja pris.';
+    end if;
+
+    update public.players
+    set pseudo = v_pseudo, avatar = v_avatar, last_seen_at = now()
+    where id = v_player_id
+    returning * into v_player;
+  else
+    insert into public.players (id, pseudo, avatar)
+    values (v_player_id, v_pseudo, v_avatar)
+    returning * into v_player;
+  end if;
+
+  return jsonb_build_object(
+    'playerId', v_player.id,
+    'pseudo', v_player.pseudo,
+    'avatar', v_player.avatar
+  );
+exception
+  when unique_violation then
+    raise exception 'Ce pseudo est deja pris.';
+  when invalid_text_representation then
+    raise exception 'Identifiant joueur invalide.';
+end;
+$$;
+
 create or replace function public.save_game_score(
   p_game_id text,
   p_pseudo text,
   p_title text default 'Joueur de la majorite',
   p_avatar text default 'avatar-1',
-  p_best_streak integer default 0
+  p_best_streak integer default 0,
+  p_player_id text default null
 )
 returns jsonb
 language plpgsql
@@ -241,6 +325,7 @@ declare
   v_games_played integer;
   v_best_streak integer;
   v_badges jsonb := '[]'::jsonb;
+  v_player_id uuid;
 begin
   if nullif(trim(p_game_id), '') is null or nullif(trim(p_pseudo), '') is null then
     raise exception 'Score invalide.';
@@ -250,6 +335,12 @@ begin
     select 1 from public.blocked_pseudos where pseudo_key = lower(trim(p_pseudo))
   ) then
     raise exception 'Ce pseudo est bloque.';
+  end if;
+
+  if nullif(trim(coalesce(p_player_id, '')), '') is not null then
+    v_player_id := p_player_id::uuid;
+
+    perform public.register_player(p_player_id, p_pseudo, p_avatar);
   end if;
 
   select
@@ -266,9 +357,10 @@ begin
 
   v_success_rate := round((v_correct::numeric / v_total) * 100, 2);
 
-  insert into public.scores (game_id, pseudo, avatar, score, correct, total, success_rate, best_streak, title)
+  insert into public.scores (game_id, player_id, pseudo, avatar, score, correct, total, success_rate, best_streak, title)
   values (
     p_game_id,
+    v_player_id,
     left(trim(p_pseudo), 18),
     left(coalesce(nullif(trim(p_avatar), ''), 'avatar-1'), 24),
     v_score,
@@ -318,6 +410,8 @@ begin
 exception
   when unique_violation then
     raise exception 'Score deja enregistre pour cette partie.';
+  when invalid_text_representation then
+    raise exception 'Identifiant joueur invalide.';
 end;
 $$;
 

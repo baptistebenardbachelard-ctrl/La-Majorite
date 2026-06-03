@@ -160,27 +160,6 @@ button {
   margin-top: auto;
 }
 
-.social-rail {
-  position: absolute;
-  z-index: 3;
-  right: 16px;
-  top: 88px;
-  display: grid;
-  gap: 10px;
-}
-
-.social-rail span {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.28);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.26);
-  font-weight: 950;
-}
-
 .eyebrow {
   margin: 0 0 10px;
   color: var(--lime);
@@ -699,17 +678,22 @@ body.answer-bad .game-frame {
 
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 
 .avatar-option {
   display: grid;
   place-items: center;
+  gap: 5px;
   min-height: 50px;
+  padding: 8px 4px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 0.7rem;
+  font-weight: 900;
 }
 
 .avatar-option.active {
@@ -725,9 +709,9 @@ body.answer-bad .game-frame {
   height: 34px;
   flex: 0 0 auto;
   border-radius: 8px;
+  position: relative;
   background: var(--avatar-bg);
-  color: #050507;
-  font-weight: 950;
+  overflow: visible;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
 }
 
@@ -736,6 +720,155 @@ body.answer-bad .game-frame {
   height: 24px;
   border-radius: 7px;
   font-size: 0.75rem;
+}
+
+.avatar-face span {
+  position: absolute;
+  display: block;
+}
+
+.avatar-eye {
+  top: 42%;
+  width: 12%;
+  height: 12%;
+  border-radius: 999px;
+  background: #08080c;
+}
+
+.avatar-eye.left {
+  left: 30%;
+}
+
+.avatar-eye.right {
+  right: 30%;
+}
+
+.avatar-mouth {
+  left: 38%;
+  bottom: 25%;
+  width: 24%;
+  height: 10%;
+  border: 2px solid #08080c;
+  border-top: 0;
+  border-radius: 0 0 999px 999px;
+}
+
+.avatar-ear {
+  display: none;
+}
+
+.avatar-hair {
+  top: -8%;
+  left: 28%;
+  width: 44%;
+  height: 22%;
+  border-radius: 999px 999px 4px 4px;
+  background: rgba(8, 8, 12, 0.72);
+}
+
+.face-pixel {
+  border-radius: 8px;
+}
+
+.face-pixel .avatar-eye,
+.face-pixel .avatar-mouth {
+  border-radius: 2px;
+}
+
+.face-bulle {
+  border-radius: 999px 999px 14px 999px;
+}
+
+.face-bulle .avatar-hair {
+  display: none;
+}
+
+.face-flash .avatar-hair {
+  top: -12%;
+  left: 16%;
+  width: 68%;
+  transform: rotate(-14deg);
+  background: #fff6a4;
+}
+
+.face-moka .avatar-ear,
+.face-luna .avatar-ear {
+  display: block;
+  top: -12%;
+  width: 30%;
+  height: 30%;
+  border-radius: 999px 999px 6px 999px;
+  background: var(--avatar-bg);
+}
+
+.face-moka .avatar-ear.left,
+.face-luna .avatar-ear.left {
+  left: 0;
+  transform: rotate(-22deg);
+}
+
+.face-moka .avatar-ear.right,
+.face-luna .avatar-ear.right {
+  right: 0;
+  transform: rotate(22deg) scaleX(-1);
+}
+
+.face-comete {
+  border-radius: 16px 999px 999px 16px;
+}
+
+.face-tempo .avatar-eye.left {
+  width: 22%;
+  border-radius: 999px;
+}
+
+.face-tempo .avatar-eye.right {
+  width: 22%;
+  border-radius: 999px;
+}
+
+.achievements-list {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.achievement-card {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.achievement-card.locked {
+  opacity: 0.48;
+  filter: grayscale(0.8);
+}
+
+.achievement-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(197, 255, 69, 0.15);
+  color: var(--lime);
+  font-size: 0.75rem;
+  font-weight: 950;
+}
+
+.achievement-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 750;
 }
 
 .name-row {
@@ -987,6 +1120,32 @@ body.answer-bad .game-frame {
   font-size: 0.8rem;
 }
 
+.chat-profile-button,
+.chat-name {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 900;
+  text-align: left;
+}
+
+.chat-profile-button {
+  padding: 0;
+}
+
+.chat-name {
+  padding: 0;
+}
+
+.chat-message time {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .chat-message p {
   margin: 3px 0 0;
   color: var(--muted);
@@ -1009,6 +1168,91 @@ body.answer-bad .game-frame {
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.1);
   color: var(--text);
+}
+
+.profile-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(10px);
+}
+
+.profile-modal.hidden {
+  display: none;
+}
+
+.profile-card {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(760px, calc(100vh - 36px));
+  overflow-y: auto;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(15, 17, 24, 0.96);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.55);
+}
+
+.profile-card > .icon-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 44px;
+}
+
+.profile-header h2 {
+  font-size: 2.2rem;
+}
+
+.profile-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.profile-stats article {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-stats strong,
+.profile-stats span {
+  display: block;
+}
+
+.profile-stats strong {
+  font-size: 1.25rem;
+}
+
+.profile-stats span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.profile-card h3 {
+  margin: 0 0 10px;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1104,7 +1348,10 @@ body.answer-bad .game-frame {
     align-content: start;
   }
 
-  .home-actions,
+  .home-actions {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
   .end-actions {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1132,5 +1379,9 @@ body.answer-bad .game-frame {
 
   .name-row {
     grid-template-columns: 1fr;
+  }
+
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

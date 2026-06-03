@@ -17,11 +17,6 @@
           <span class="brand-mark">M</span>
           <span>La Majorit&eacute;</span>
         </div>
-        <div class="social-rail" aria-hidden="true">
-          <span>+</span>
-          <span>%</span>
-          <span>#</span>
-        </div>
         <div class="home-copy">
           <p class="eyebrow">Devine le vote collectif</p>
           <h1 id="homeTitle">Pense comme la majorit&eacute;.</h1>
@@ -37,6 +32,7 @@
         <div class="home-actions">
           <button id="playButton" class="primary-button" type="button">Jouer</button>
           <button id="leaderboardButton" class="secondary-button" type="button">Classement</button>
+          <button id="achievementsButton" class="secondary-button" type="button">Succes</button>
           <button id="howToButton" class="ghost-button" type="button">Comment jouer</button>
         </div>
       </div>
@@ -156,6 +152,18 @@
       </div>
     </section>
 
+    <section id="achievementsScreen" class="screen" aria-labelledby="achievementsTitle">
+      <div class="story-frame board-frame">
+        <header class="board-header">
+          <button class="icon-button" data-nav="home" type="button" aria-label="Retour">&lt;</button>
+          <h2 id="achievementsTitle">Succes</h2>
+          <button id="refreshAchievements" class="icon-button" type="button" aria-label="Actualiser">R</button>
+        </header>
+        <p id="achievementsStatus" class="save-status">Connecte-toi avec ton pseudo pour voir tes succes.</p>
+        <div id="achievementsList" class="achievements-list"></div>
+      </div>
+    </section>
+
     <section id="howToScreen" class="screen" aria-labelledby="howToTitle">
       <div class="story-frame info-frame">
         <button class="icon-button floating-back" data-nav="home" type="button" aria-label="Retour">&lt;</button>
@@ -184,6 +192,13 @@
         <button class="primary-button compact" type="submit">Envoyer</button>
       </form>
       <p id="chatStatus" class="save-status"></p>
+    </div>
+  </section>
+
+  <section id="profileModal" class="profile-modal hidden" aria-label="Profil joueur">
+    <div class="profile-card">
+      <button id="profileClose" class="icon-button" type="button" aria-label="Fermer">x</button>
+      <div id="profileContent"></div>
     </div>
   </section>
 

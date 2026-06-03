@@ -1,18 +1,29 @@
 const TOTAL_QUESTIONS = 25;
 const AVATARS = [
-  { id: "avatar-1", label: "M", color: "linear-gradient(135deg, #ff2f68, #ffcf4a)" },
-  { id: "avatar-2", label: "A", color: "linear-gradient(135deg, #12d7f2, #8b5cff)" },
-  { id: "avatar-3", label: "B", color: "linear-gradient(135deg, #c5ff45, #12d7f2)" },
-  { id: "avatar-4", label: "X", color: "linear-gradient(135deg, #ff8a3d, #ff2f68)" },
-  { id: "avatar-5", label: "?", color: "linear-gradient(135deg, #ffffff, #8b5cff)" },
-  { id: "avatar-6", label: "#", color: "linear-gradient(135deg, #ffcf4a, #12d7f2)" }
+  { id: "avatar-1", name: "Nova", face: "face-nova", color: "linear-gradient(135deg, #ff2f68, #ffcf4a)" },
+  { id: "avatar-2", name: "Pixel", face: "face-pixel", color: "linear-gradient(135deg, #12d7f2, #8b5cff)" },
+  { id: "avatar-3", name: "Bulle", face: "face-bulle", color: "linear-gradient(135deg, #c5ff45, #12d7f2)" },
+  { id: "avatar-4", name: "Flash", face: "face-flash", color: "linear-gradient(135deg, #ff8a3d, #ff2f68)" },
+  { id: "avatar-5", name: "Moka", face: "face-moka", color: "linear-gradient(135deg, #ffffff, #8b5cff)" },
+  { id: "avatar-6", name: "Comete", face: "face-comete", color: "linear-gradient(135deg, #ffcf4a, #12d7f2)" },
+  { id: "avatar-7", name: "Luna", face: "face-luna", color: "linear-gradient(135deg, #8b5cff, #ff2f68)" },
+  { id: "avatar-8", name: "Tempo", face: "face-tempo", color: "linear-gradient(135deg, #12d7f2, #c5ff45)" }
 ];
 
-const BADGES = {
-  first_game: { title: "Premiere partie", text: "Tu as rejoint La Majorite." },
-  ten_games: { title: "10 parties", text: "Tu commences a lire la foule." },
-  streak_5: { title: "Serie x5", text: "5 bonnes reponses d'affilee." }
-};
+const ACHIEVEMENTS = [
+  { id: "first_game", title: "Premiere partie", text: "Terminer ta premiere partie.", check: (profile) => profile.gamesPlayed >= 1 },
+  { id: "ten_games", title: "10 parties", text: "Terminer 10 parties avec le meme pseudo.", check: (profile) => profile.gamesPlayed >= 10 },
+  { id: "streak_5", title: "Serie x5", text: "Faire 5 bonnes reponses d'affilee.", check: (profile) => profile.bestStreak >= 5 },
+  { id: "streak_10", title: "Serie x10", text: "Faire 10 bonnes reponses d'affilee.", check: (profile) => profile.bestStreak >= 10 },
+  { id: "perfect_game", title: "Partie parfaite", text: "Finir une partie a 100%.", check: (profile) => profile.bestGamePercent >= 100 },
+  { id: "strong_game", title: "Lecteur solide", text: "Faire au moins 80% sur une partie.", check: (profile) => profile.bestGamePercent >= 80 },
+  { id: "regular", title: "Habitue", text: "Jouer 25 parties.", check: (profile) => profile.gamesPlayed >= 25 },
+  { id: "top_10", title: "Top 10", text: "Entrer dans le top 10 global.", check: (profile) => profile.rank > 0 && profile.rank <= 10 },
+  { id: "top_3", title: "Podium", text: "Entrer dans le top 3 global.", check: (profile) => profile.rank > 0 && profile.rank <= 3 },
+  { id: "chat_first", title: "Premier message", text: "Envoyer un message dans le chat.", check: (profile) => profile.chatMessages >= 1 },
+  { id: "chat_10", title: "Voix du groupe", text: "Envoyer 10 messages dans le chat.", check: (profile) => profile.chatMessages >= 10 },
+  { id: "risk_taker", title: "Prise de risque", text: "Jouer au moins 5 parties avec 70% ou plus au global.", check: (profile) => profile.gamesPlayed >= 5 && profile.successRate >= 70 }
+];
 
 const screens = {
   home: document.getElementById("homeScreen"),
@@ -20,12 +31,14 @@ const screens = {
   game: document.getElementById("gameScreen"),
   end: document.getElementById("endScreen"),
   leaderboard: document.getElementById("leaderboardScreen"),
+  achievements: document.getElementById("achievementsScreen"),
   howTo: document.getElementById("howToScreen")
 };
 
 const ui = {
   playButton: document.getElementById("playButton"),
   leaderboardButton: document.getElementById("leaderboardButton"),
+  achievementsButton: document.getElementById("achievementsButton"),
   howToButton: document.getElementById("howToButton"),
   questionCounter: document.getElementById("questionCounter"),
   progressBar: document.getElementById("progressBar"),
@@ -55,6 +68,9 @@ const ui = {
   streakTab: document.getElementById("streakTab"),
   leaderboardList: document.getElementById("leaderboardList"),
   refreshLeaderboard: document.getElementById("refreshLeaderboard"),
+  achievementsList: document.getElementById("achievementsList"),
+  achievementsStatus: document.getElementById("achievementsStatus"),
+  refreshAchievements: document.getElementById("refreshAchievements"),
   homeTopName: document.getElementById("homeTopName"),
   homeTopScore: document.getElementById("homeTopScore"),
   soundToggle: document.getElementById("soundToggle"),
@@ -66,6 +82,9 @@ const ui = {
   chatForm: document.getElementById("chatForm"),
   chatInput: document.getElementById("chatInput"),
   chatStatus: document.getElementById("chatStatus"),
+  profileModal: document.getElementById("profileModal"),
+  profileClose: document.getElementById("profileClose"),
+  profileContent: document.getElementById("profileContent"),
   toast: document.getElementById("toast")
 };
 
@@ -79,6 +98,7 @@ const state = {
   votes: [],
   votedQuestionIds: new Set(),
   gameId: "",
+  playerId: localStorage.getItem("majorite_player_id") || "",
   playerPseudo: "",
   playerAvatar: localStorage.getItem("majorite_avatar") || "avatar-1",
   saved: false,
@@ -93,6 +113,14 @@ function createGameId() {
     return crypto.randomUUID();
   }
   return `game-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getPlayerId() {
+  if (!state.playerId) {
+    state.playerId = createGameId();
+    localStorage.setItem("majorite_player_id", state.playerId);
+  }
+  return state.playerId;
 }
 
 function showScreen(name) {
@@ -126,13 +154,23 @@ function avatarFor(id) {
 
 function avatarHtml(id, className = "avatar-chip") {
   const avatar = avatarFor(id);
-  return `<span class="${className}" style="--avatar-bg: ${avatar.color}">${escapeHtml(avatar.label)}</span>`;
+  return `
+    <span class="${className} avatar-face ${avatar.face}" style="--avatar-bg: ${avatar.color}" aria-hidden="true">
+      <span class="avatar-ear left"></span>
+      <span class="avatar-ear right"></span>
+      <span class="avatar-hair"></span>
+      <span class="avatar-eye left"></span>
+      <span class="avatar-eye right"></span>
+      <span class="avatar-mouth"></span>
+    </span>
+  `;
 }
 
 function renderAvatarPicker() {
   ui.avatarGrid.innerHTML = AVATARS.map((avatar) => `
-    <button class="avatar-option ${state.playerAvatar === avatar.id ? "active" : ""}" type="button" data-avatar="${avatar.id}" aria-label="Avatar ${avatar.label}">
+    <button class="avatar-option ${state.playerAvatar === avatar.id ? "active" : ""}" type="button" data-avatar="${avatar.id}" aria-label="Avatar ${avatar.name}">
       ${avatarHtml(avatar.id)}
+      <span>${escapeHtml(avatar.name)}</span>
     </button>
   `).join("");
 }
@@ -232,6 +270,17 @@ function formatDate(isoDate) {
   }).format(parsedDate);
 }
 
+function formatTime(isoDate) {
+  if (!isoDate) return "--:--";
+  const parsedDate = new Date(isoDate);
+  if (Number.isNaN(parsedDate.getTime())) return "--:--";
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(parsedDate);
+}
+
 function askPseudo() {
   ui.pseudoInput.value = localStorage.getItem("majorite_pseudo") || state.playerPseudo || "";
   ui.pseudoStatus.textContent = "Ton score sera ajoute automatiquement au classement a la fin.";
@@ -240,7 +289,7 @@ function askPseudo() {
   window.setTimeout(() => ui.pseudoInput.focus(), 80);
 }
 
-function submitPseudo(event) {
+async function submitPseudo(event) {
   event.preventDefault();
   const pseudo = ui.pseudoInput.value.trim().slice(0, 18);
   if (!pseudo) {
@@ -248,10 +297,26 @@ function submitPseudo(event) {
     return;
   }
 
-  state.playerPseudo = pseudo;
-  localStorage.setItem("majorite_pseudo", pseudo);
-  localStorage.setItem("majorite_avatar", state.playerAvatar);
-  startGame();
+  try {
+    ui.pseudoStatus.textContent = "Verification du pseudo...";
+    const player = await api("/api/player/register", {
+      method: "POST",
+      body: JSON.stringify({
+        playerId: getPlayerId(),
+        pseudo,
+        avatar: state.playerAvatar
+      })
+    });
+    state.playerId = player.playerId;
+    state.playerPseudo = player.pseudo;
+    state.playerAvatar = player.avatar;
+    localStorage.setItem("majorite_player_id", state.playerId);
+    localStorage.setItem("majorite_pseudo", state.playerPseudo);
+    localStorage.setItem("majorite_avatar", state.playerAvatar);
+    startGame();
+  } catch (error) {
+    ui.pseudoStatus.textContent = error.message;
+  }
 }
 
 async function startGame() {
@@ -425,6 +490,7 @@ async function saveScore() {
     ui.saveStatus.textContent = "Enregistrement...";
     const payload = {
       gameId: state.gameId,
+      playerId: state.playerId,
       pseudo,
       avatar: state.playerAvatar,
       score: state.score,
@@ -452,7 +518,7 @@ async function saveScore() {
 
 function renderBadges(badges) {
   const unlocked = badges
-    .map((badge) => BADGES[badge])
+    .map((badge) => ACHIEVEMENTS.find((achievement) => achievement.id === badge))
     .filter(Boolean);
 
   if (!unlocked.length) {
@@ -466,6 +532,48 @@ function renderBadges(badges) {
       <small>${escapeHtml(badge.text)}</small>
     </span>
   `).join("");
+}
+
+function achievementsForProfile(profile = {}) {
+  return ACHIEVEMENTS.map((achievement) => ({
+    ...achievement,
+    unlocked: Boolean(achievement.check(profile))
+  }));
+}
+
+function renderAchievementsList(profile, container = ui.achievementsList) {
+  const achievements = achievementsForProfile(profile);
+  container.innerHTML = achievements.map((achievement) => `
+    <article class="achievement-card ${achievement.unlocked ? "unlocked" : "locked"}">
+      <span class="achievement-icon">${achievement.unlocked ? "OK" : "--"}</span>
+      <div>
+        <strong>${escapeHtml(achievement.title)}</strong>
+        <p>${escapeHtml(achievement.text)}</p>
+      </div>
+    </article>
+  `).join("");
+}
+
+async function loadAchievements() {
+  const pseudo = state.playerPseudo || localStorage.getItem("majorite_pseudo") || "";
+  if (!pseudo) {
+    ui.achievementsStatus.textContent = "Entre un pseudo puis joue une partie pour commencer a debloquer des succes.";
+    renderAchievementsList({}, ui.achievementsList);
+    showScreen("achievements");
+    return;
+  }
+
+  ui.achievementsStatus.textContent = "Chargement des succes...";
+  showScreen("achievements");
+
+  try {
+    const data = await api(`/api/player?pseudo=${encodeURIComponent(pseudo)}`);
+    ui.achievementsStatus.textContent = `${data.profile.pseudo} - Rang #${data.profile.rank || "-"} - ${data.profile.gamesPlayed} partie(s).`;
+    renderAchievementsList(data.profile, ui.achievementsList);
+  } catch (error) {
+    ui.achievementsStatus.textContent = error.message;
+    renderAchievementsList({}, ui.achievementsList);
+  }
 }
 
 async function loadLeaderboard(mode = state.leaderboardMode) {
@@ -555,9 +663,12 @@ function renderChat(messages) {
 
   ui.chatMessages.innerHTML = messages.map((message) => `
     <article class="chat-message">
-      ${avatarHtml(message.avatar, "avatar-mini")}
+      <button class="chat-profile-button" type="button" data-profile="${escapeHtml(message.pseudo)}" aria-label="Voir le profil de ${escapeHtml(message.pseudo)}">
+        ${avatarHtml(message.avatar, "avatar-mini")}
+      </button>
       <div>
-        <strong>${escapeHtml(message.pseudo)}</strong>
+        <button class="chat-name" type="button" data-profile="${escapeHtml(message.pseudo)}">${escapeHtml(message.pseudo)}</button>
+        <time>${formatTime(message.created_at)}</time>
         <p>${escapeHtml(message.message)}</p>
       </div>
     </article>
@@ -582,6 +693,7 @@ async function sendChatMessage(event) {
       method: "POST",
       body: JSON.stringify({
         pseudo: state.playerPseudo,
+        playerId: state.playerId,
         avatar: state.playerAvatar,
         message
       })
@@ -594,8 +706,39 @@ async function sendChatMessage(event) {
   }
 }
 
+async function openPlayerProfile(pseudo) {
+  ui.profileModal.classList.remove("hidden");
+  ui.profileContent.innerHTML = "<p class=\"empty-state\">Chargement du profil...</p>";
+
+  try {
+    const data = await api(`/api/player?pseudo=${encodeURIComponent(pseudo)}`);
+    const profile = data.profile;
+    ui.profileContent.innerHTML = `
+      <header class="profile-header">
+        ${avatarHtml(profile.avatar, "avatar-chip")}
+        <div>
+          <h2>${escapeHtml(profile.pseudo)}</h2>
+          <p>Rang global #${profile.rank || "-"}</p>
+        </div>
+      </header>
+      <div class="profile-stats">
+        <article><strong>${profile.gamesPlayed || 0}</strong><span>parties</span></article>
+        <article><strong>${formatPercent(profile.successRate || 0)}</strong><span>reussite</span></article>
+        <article><strong>x${profile.bestStreak || 0}</strong><span>streak</span></article>
+        <article><strong>${profile.chatMessages || 0}</strong><span>messages</span></article>
+      </div>
+      <h3>Succes</h3>
+      <div class="achievements-list profile-achievements"></div>
+    `;
+    renderAchievementsList(profile, ui.profileContent.querySelector(".profile-achievements"));
+  } catch (error) {
+    ui.profileContent.innerHTML = `<p class="empty-state">${escapeHtml(error.message)}</p>`;
+  }
+}
+
 ui.playButton.addEventListener("click", askPseudo);
 ui.leaderboardButton.addEventListener("click", () => loadLeaderboard("global"));
+ui.achievementsButton.addEventListener("click", loadAchievements);
 ui.howToButton.addEventListener("click", () => showScreen("howTo"));
 ui.nextButton.addEventListener("click", nextQuestion);
 ui.pseudoForm.addEventListener("submit", submitPseudo);
@@ -606,6 +749,7 @@ ui.globalTab.addEventListener("click", () => loadLeaderboard("global"));
 ui.todayTab.addEventListener("click", () => loadLeaderboard("today"));
 ui.streakTab.addEventListener("click", () => loadLeaderboard("streak"));
 ui.refreshLeaderboard.addEventListener("click", () => loadLeaderboard(state.leaderboardMode));
+ui.refreshAchievements.addEventListener("click", loadAchievements);
 ui.soundToggle.addEventListener("click", () => setSoundEnabled(!state.soundEnabled));
 ui.avatarGrid.addEventListener("click", (event) => {
   const button = event.target.closest("[data-avatar]");
@@ -620,6 +764,15 @@ ui.chatToggle.addEventListener("click", () => {
 });
 ui.chatClose.addEventListener("click", () => ui.chatBox.classList.add("hidden"));
 ui.chatForm.addEventListener("submit", sendChatMessage);
+ui.chatMessages.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-profile]");
+  if (!button) return;
+  openPlayerProfile(button.dataset.profile);
+});
+ui.profileClose.addEventListener("click", () => ui.profileModal.classList.add("hidden"));
+ui.profileModal.addEventListener("click", (event) => {
+  if (event.target === ui.profileModal) ui.profileModal.classList.add("hidden");
+});
 
 document.querySelectorAll("[data-nav='home']").forEach((button) => {
   button.addEventListener("click", () => showScreen("home"));
