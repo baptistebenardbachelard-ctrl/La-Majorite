@@ -125,6 +125,79 @@ async function postScore(supabase, event) {
   return json(201, data);
 }
 
+function checkAdminToken(event) {
+  const token = event.headers?.["x-admin-token"] || event.headers?.["X-Admin-Token"] || "";
+  const adminToken = process.env.ADMIN_TOKEN || "";
+
+  if (!adminToken) {
+    throw new Error("Token admin non configuré sur le serveur.");
+  }
+
+  if (token !== adminToken) {
+    const error = new Error("Token admin invalide.");
+    error.statusCode = 403;
+    throw error;
+  }
+}
+
+async function getAdminScores(supabase) {
+  const { data, error } = await supabase
+    .from("scores")
+    .select("id, game_id, pseudo, score, correct, total, success_rate, title, day, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+
+  return json(200, {
+    scores: data.map((score) => ({
+      id: score.id,
+      gameId: score.game_id,
+      pseudo: score.pseudo,
+      score: score.score,
+      correct: score.correct,
+      total: score.total,
+      successRate: Number(score.success_rate),
+      title: score.title,
+      day: score.day,
+      createdAt: score.created_at
+    }))
+  });
+}
+
+async function deleteScore(supabase, event) {
+  const body = await readBody(event);
+  const scoreId = String(body.id || "");
+
+  if (!scoreId) {
+    throw new Error("ID du score requis.");
+  }
+
+  const { error } = await supabase
+    .from("scores")
+    .delete()
+    .eq("id", scoreId);
+
+  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+
+  return json(200, { message: "Score supprimé." });
+}
+
+async function resetScores(supabase) {
+  const { data, error } = await supabase.rpc("admin_reset_scores");
+
+  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+
+  return json(200, { message: "Scores réinitialisés.", data });
+}
+
+async function resetAll(supabase) {
+  const { data, error } = await supabase.rpc("admin_reset_all");
+
+  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+
+  return json(200, { message: "Toutes les données réinitialisées.", data });
+}
+
 exports.handler = async (event) => {
   // Handle CORS preflight requests
   if (event.httpMethod === "OPTIONS") {
@@ -140,6 +213,32 @@ exports.handler = async (event) => {
     const supabase = getSupabase();
     const path = routePath(event);
 
+    // Admin routes
+    if (path.startsWith("/admin")) {
+      try {
+        checkAdminToken(event);
+      } catch (error) {
+        return json(error.statusCode || 403, { error: error.message });
+      }
+
+      if (event.httpMethod === "GET" && path === "/admin/scores") {
+        return await getAdminScores(supabase);
+      }
+
+      if (event.httpMethod === "POST" && path === "/admin/delete-score") {
+        return await deleteScore(supabase, event);
+      }
+
+      if (event.httpMethod === "POST" && path === "/admin/reset-scores") {
+        return await resetScores(supabase);
+      }
+
+      if (event.httpMethod === "POST" && path === "/admin/reset-all") {
+        return await resetAll(supabase);
+      }
+    }
+
+    // Public routes
     if (event.httpMethod === "GET" && path === "/questions") {
       return await getQuestions(supabase);
     }
