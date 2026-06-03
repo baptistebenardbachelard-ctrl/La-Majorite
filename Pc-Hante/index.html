@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>La Majorit&eacute;</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
+      <div class="story-frame home-frame">
+        <div class="brand-row">
+          <span class="brand-mark">M</span>
+          <span>La Majorit&eacute;</span>
+        </div>
+        <div class="social-rail" aria-hidden="true">
+          <span>+</span>
+          <span>%</span>
+          <span>#</span>
+        </div>
+        <div class="home-copy">
+          <p class="eyebrow">Devine le vote collectif</p>
+          <h1 id="homeTitle">Pense comme la majorit&eacute;.</h1>
+          <p class="lead">25 dilemmes absurdes, moraux ou genants. Vote, decouvre les vrais pourcentages, marque des points.</p>
+        </div>
+        <div class="home-actions">
+          <button id="playButton" class="primary-button" type="button">Jouer</button>
+          <button id="leaderboardButton" class="secondary-button" type="button">Classement</button>
+          <button id="howToButton" class="ghost-button" type="button">Comment jouer</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen" aria-labelledby="questionText">
+      <div class="story-frame game-frame">
+        <header class="game-topbar">
+          <div>
+            <span id="questionCounter" class="counter">Question 1/25</span>
+            <div class="progress-track" aria-hidden="true">
+              <span id="progressBar"></span>
+            </div>
+          </div>
+          <div class="score-pill">
+            <span>Score</span>
+            <strong id="liveScore">0</strong>
+          </div>
+        </header>
+
+        <div class="question-zone">
+          <p id="questionText" class="question-text"></p>
+        </div>
+
+        <div id="choices" class="choices" aria-label="Choix de reponse">
+          <button id="choiceA" class="choice-button choice-a" type="button">
+            <span class="choice-label">A</span>
+            <span class="choice-text"></span>
+            <span class="result-bar" aria-hidden="true"></span>
+            <span class="result-percent"></span>
+            <span class="result-tag"></span>
+          </button>
+          <button id="choiceB" class="choice-button choice-b" type="button">
+            <span class="choice-label">B</span>
+            <span class="choice-text"></span>
+            <span class="result-bar" aria-hidden="true"></span>
+            <span class="result-percent"></span>
+            <span class="result-tag"></span>
+          </button>
+        </div>
+
+        <footer class="round-footer">
+          <p id="feedback" class="feedback" aria-live="polite">Choisis ce que la majorit&eacute; va choisir.</p>
+          <button id="nextButton" class="primary-button next-button hidden" type="button">Question suivante</button>
+        </footer>
+      </div>
+    </section>
+
+    <section id="pseudoScreen" class="screen" aria-labelledby="pseudoTitle">
+      <div class="story-frame info-frame">
+        <button class="icon-button floating-back" data-nav="home" type="button" aria-label="Retour">&lt;</button>
+        <p class="eyebrow">Avant de jouer</p>
+        <h2 id="pseudoTitle">Entre ton pseudo.</h2>
+        <form id="pseudoForm" class="name-form">
+          <label for="pseudoInput">Pseudo</label>
+          <div class="name-row">
+            <input id="pseudoInput" name="pseudo" type="text" maxlength="18" autocomplete="nickname" placeholder="Ton pseudo" required>
+            <button class="primary-button compact" type="submit">Jouer</button>
+          </div>
+          <p id="pseudoStatus" class="save-status" aria-live="polite">Ton score sera ajoute automatiquement au classement a la fin.</p>
+        </form>
+      </div>
+    </section>
+
+    <section id="endScreen" class="screen" aria-labelledby="endTitle">
+      <div class="story-frame end-frame">
+        <div class="share-card" id="shareCard">
+          <p class="eyebrow">Partie terminee</p>
+          <h2 id="endTitle">Tu penses comme <span id="syncPercent">0 %</span> des joueurs</h2>
+          <div class="score-display">
+            <span id="finalScore">0</span>
+            <small>points</small>
+          </div>
+          <div class="result-grid">
+            <div>
+              <span>Resultat</span>
+              <strong id="finalCorrect">0/25</strong>
+            </div>
+            <div>
+              <span>Rang</span>
+              <strong id="finalRank">#-</strong>
+            </div>
+          </div>
+          <p id="finalTitle" class="player-title">Alien social</p>
+        </div>
+
+        <p id="saveStatus" class="save-status" aria-live="polite"></p>
+
+        <div class="end-actions">
+          <button id="replayButton" class="secondary-button" type="button">Rejouer</button>
+          <button id="showLeaderboardButton" class="secondary-button" type="button">Voir le classement</button>
+          <button id="shareButton" class="ghost-button" type="button">Partager mon score</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="leaderboardScreen" class="screen" aria-labelledby="leaderboardTitle">
+      <div class="story-frame board-frame">
+        <header class="board-header">
+          <button class="icon-button" data-nav="home" type="button" aria-label="Retour">&lt;</button>
+          <h2 id="leaderboardTitle">Classement</h2>
+          <button id="refreshLeaderboard" class="icon-button" type="button" aria-label="Actualiser">R</button>
+        </header>
+        <div class="tabs" role="tablist" aria-label="Type de classement">
+          <button id="globalTab" class="tab active" type="button" role="tab" aria-selected="true">Top global</button>
+          <button id="todayTab" class="tab" type="button" role="tab" aria-selected="false">Top du jour</button>
+        </div>
+        <ol id="leaderboardList" class="leaderboard-list"></ol>
+      </div>
+    </section>
+
+    <section id="howToScreen" class="screen" aria-labelledby="howToTitle">
+      <div class="story-frame info-frame">
+        <button class="icon-button floating-back" data-nav="home" type="button" aria-label="Retour">&lt;</button>
+        <p class="eyebrow">Regles</p>
+        <h2 id="howToTitle">Choisis la majorit&eacute;, pas ton coeur.</h2>
+        <div class="rules">
+          <p>Chaque partie contient 25 dilemmes. Tu votes A ou B, puis les vrais votes sont enregistres et les pourcentages s'affichent.</p>
+          <p>Majorit&eacute; trouvee : 1 point. Majorit&eacute; tres serree entre 51/49 et 55/45 : 2 points.</p>
+          <p>Pas de compte, juste un pseudo avant la partie pour entrer dans le classement global et le top du jour.</p>
+        </div>
+        <button class="primary-button" data-nav="play" type="button">Commencer</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
