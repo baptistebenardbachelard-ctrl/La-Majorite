@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Majorit&eacute;</title>
+  <link rel="icon" type="image/png" href="assets/logo-majorite.png">
+  <link rel="apple-touch-icon" href="assets/logo-majorite.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
@@ -14,10 +16,11 @@
     <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
       <div class="story-frame home-frame">
         <div class="brand-row">
-          <span class="brand-mark">M</span>
+          <img class="brand-logo" src="assets/logo-majorite.png" alt="Logo La Majorit&eacute;">
           <span>La Majorit&eacute;</span>
         </div>
         <div class="home-copy">
+          <img class="hero-logo" src="assets/logo-majorite.png" alt="Logo La Majorit&eacute;">
           <p class="eyebrow">Devine le vote collectif</p>
           <h1 id="homeTitle">Pense comme la majorit&eacute;.</h1>
           <p class="lead">25 dilemmes absurdes, moraux ou genants. Vote, decouvre les vrais pourcentages, marque des points.</p>
@@ -34,6 +37,7 @@
           <button id="leaderboardButton" class="secondary-button" type="button">Classement</button>
           <button id="achievementsButton" class="secondary-button" type="button">Succes</button>
           <button id="howToButton" class="ghost-button" type="button">Comment jouer</button>
+          <a class="secondary-button discord-button" href="https://discord.gg/6pBdYZbzGq" target="_blank" rel="noopener noreferrer">Discord</a>
         </div>
       </div>
     </section>
@@ -123,6 +127,7 @@
             </div>
           </div>
           <p id="finalTitle" class="player-title">Alien social</p>
+          <div id="levelProgress" class="level-progress"></div>
           <div id="badgeList" class="badge-list" aria-label="Badges debloques"></div>
         </div>
 
@@ -185,6 +190,10 @@
     <a href="confidentialite.html">Politique de confidentialite</a>
     <span aria-hidden="true">|</span>
     <a href="contact.html">Contact</a>
+    <span aria-hidden="true">|</span>
+    <a href="https://discord.gg/6pBdYZbzGq" target="_blank" rel="noopener noreferrer">Discord</a>
+    <span aria-hidden="true">|</span>
+    <a href="devblog.html">Devblog</a>
   </footer>
 
   <section id="chatPanel" class="chat-panel" aria-label="Chat du jeu">
@@ -210,6 +219,7 @@
     </div>
   </section>
 
+  <a class="devblog-float" href="devblog.html">Devblog</a>
   <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true">Son: on</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="script.js"></script>

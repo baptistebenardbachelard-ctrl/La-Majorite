@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - La Majorit&eacute;</title>
+  <link rel="icon" type="image/png" href="assets/logo-majorite.png">
+  <link rel="apple-touch-icon" href="assets/logo-majorite.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
@@ -46,6 +48,21 @@
             <button class="ghost-button danger-action" type="submit">Bloquer</button>
           </form>
           <div id="blockedList" class="admin-list compact-list"></div>
+        </section>
+
+        <section class="admin-section">
+          <h2>Messages signales</h2>
+          <div id="reportsList" class="admin-list compact-list"></div>
+        </section>
+
+        <section class="admin-section">
+          <h2>Devblog</h2>
+          <form id="devblogForm" class="admin-devblog-form">
+            <input id="devblogTitle" type="text" maxlength="100" placeholder="Titre de la nouveaute">
+            <textarea id="devblogContent" maxlength="3000" placeholder="Ecris les nouveautes de la mise a jour..."></textarea>
+            <button class="secondary-button" type="submit">Publier</button>
+          </form>
+          <div id="devblogList" class="admin-list compact-list"></div>
         </section>
 
         <section class="admin-section">

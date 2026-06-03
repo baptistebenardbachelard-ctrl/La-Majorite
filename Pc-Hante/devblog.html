@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact - La Majorite</title>
+  <title>Devblog - La Majorite</title>
   <link rel="icon" type="image/png" href="assets/logo-majorite.png">
   <link rel="apple-touch-icon" href="assets/logo-majorite.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,17 +13,13 @@
 </head>
 <body>
   <main class="legal-shell">
-    <article class="legal-card">
-      <a class="admin-link" href="/">Retour au jeu</a>
-      <p class="eyebrow">Nous contacter</p>
-      <h1>Contact</h1>
-
-      <section>
-        <h2>Une question, un bug ou une suggestion ?</h2>
-        <p>Vous pouvez me contacter a l'adresse suivante :</p>
-        <p><a class="contact-mail" href="mailto:baptiste.benard.bachelard@gmail.com">baptiste.benard.bachelard@gmail.com</a></p>
-        <p>Je repondrai des que possible.</p>
-      </section>
+    <article class="legal-card devblog-card">
+      <a class="admin-link back-link" href="/">Retour au jeu</a>
+      <p class="eyebrow">Nouveautes</p>
+      <h1>Devblog</h1>
+      <div id="devblogPosts" class="devblog-posts">
+        <p class="empty-state">Chargement...</p>
+      </div>
     </article>
   </main>
 
@@ -38,5 +34,7 @@
     <span aria-hidden="true">|</span>
     <a href="devblog.html">Devblog</a>
   </footer>
+
+  <script src="devblog.js"></script>
 </body>
 </html>

@@ -11,6 +11,11 @@ const blockForm = document.getElementById("blockForm");
 const blockPseudo = document.getElementById("blockPseudo");
 const blockReason = document.getElementById("blockReason");
 const blockedList = document.getElementById("blockedList");
+const reportsList = document.getElementById("reportsList");
+const devblogForm = document.getElementById("devblogForm");
+const devblogTitle = document.getElementById("devblogTitle");
+const devblogContent = document.getElementById("devblogContent");
+const devblogList = document.getElementById("devblogList");
 const questionSearchForm = document.getElementById("questionSearchForm");
 const questionSearch = document.getElementById("questionSearch");
 const questionsList = document.getElementById("questionsList");
@@ -78,6 +83,7 @@ function renderStats(stats) {
     <article><strong>${stats.answeredQuestions ?? 0}</strong><span>reponses</span></article>
     <article><strong>${stats.questions ?? 0}</strong><span>questions</span></article>
     <article><strong>${stats.chatMessages ?? 0}</strong><span>messages chat</span></article>
+    <article><strong>${stats.reports ?? 0}</strong><span>signalements</span></article>
   `;
 
   const blocked = stats.blocked || [];
@@ -89,6 +95,38 @@ function renderStats(stats) {
       </article>
     `).join("")
     : "<p class=\"empty-state\">Aucun pseudo bloque.</p>";
+}
+
+function renderReports(reports) {
+  reportsList.innerHTML = reports.length
+    ? reports.map((report) => `
+      <article class="blocked-row">
+        <span>
+          <strong>${escapeHtml(report.pseudo)} - niv. ${report.player_level || 1}</strong>
+          <br>${escapeHtml(report.message)}
+          <br><small>${escapeHtml(report.report_reason || "Signale")} - ${formatDate(report.reported_at)}</small>
+        </span>
+        <span class="report-actions">
+          <button class="delete-button" type="button" data-delete-message="${report.id}">Supprimer</button>
+          <button class="secondary-button compact-admin" type="button" data-clear-report="${report.id}">Ignorer</button>
+        </span>
+      </article>
+    `).join("")
+    : "<p class=\"empty-state\">Aucun message signale.</p>";
+}
+
+function renderDevblog(posts) {
+  devblogList.innerHTML = posts.length
+    ? posts.map((post) => `
+      <article class="blocked-row">
+        <span>
+          <strong>${escapeHtml(post.title)}</strong>
+          <br><small>${formatDate(post.created_at)}</small>
+        </span>
+        <button class="delete-button" type="button" data-delete-devblog="${post.id}">Supprimer</button>
+      </article>
+    `).join("")
+    : "<p class=\"empty-state\">Aucun post devblog.</p>";
 }
 
 function renderQuestions(questions) {
@@ -128,13 +166,17 @@ function escapeHtml(value) {
 
 async function loadScores() {
   setStatus("Chargement...");
-  const [scoresData, statsData, questionsData] = await Promise.all([
+  const [scoresData, statsData, questionsData, reportsData, devblogData] = await Promise.all([
     adminApi("/api/admin/scores"),
     adminApi("/api/admin/stats"),
-    adminApi(`/api/admin/questions?search=${encodeURIComponent(questionSearch.value.trim())}`)
+    adminApi(`/api/admin/questions?search=${encodeURIComponent(questionSearch.value.trim())}`),
+    adminApi("/api/admin/reports"),
+    adminApi("/api/devblog")
   ]);
   renderStats(statsData);
   renderQuestions(questionsData.questions);
+  renderReports(reportsData.reports || []);
+  renderDevblog(devblogData.posts || []);
   const data = scoresData;
   renderScores(data.scores);
   setStatus(`${data.scores.length} score(s) charge(s).`);
@@ -222,6 +264,67 @@ blockedList.addEventListener("click", async (event) => {
     await adminApi("/api/admin/unblock-pseudo", {
       method: "POST",
       body: JSON.stringify({ pseudo: button.dataset.unblock })
+    });
+    await loadScores();
+  } catch (error) {
+    setStatus(error.message);
+  }
+});
+
+reportsList.addEventListener("click", async (event) => {
+  const deleteButton = event.target.closest("[data-delete-message]");
+  const clearButton = event.target.closest("[data-clear-report]");
+
+  try {
+    if (deleteButton) {
+      if (!confirm("Supprimer ce message du chat ?")) return;
+      await adminApi("/api/admin/delete-message", {
+        method: "POST",
+        body: JSON.stringify({ id: deleteButton.dataset.deleteMessage })
+      });
+      await loadScores();
+      return;
+    }
+
+    if (clearButton) {
+      await adminApi("/api/admin/clear-report", {
+        method: "POST",
+        body: JSON.stringify({ id: clearButton.dataset.clearReport })
+      });
+      await loadScores();
+    }
+  } catch (error) {
+    setStatus(error.message);
+  }
+});
+
+devblogForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    await adminApi("/api/admin/devblog", {
+      method: "POST",
+      body: JSON.stringify({
+        title: devblogTitle.value,
+        content: devblogContent.value
+      })
+    });
+    devblogTitle.value = "";
+    devblogContent.value = "";
+    await loadScores();
+  } catch (error) {
+    setStatus(error.message);
+  }
+});
+
+devblogList.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete-devblog]");
+  if (!button) return;
+  if (!confirm("Supprimer ce post du devblog ?")) return;
+
+  try {
+    await adminApi("/api/admin/delete-devblog", {
+      method: "POST",
+      body: JSON.stringify({ id: button.dataset.deleteDevblog })
     });
     await loadScores();
   } catch (error) {

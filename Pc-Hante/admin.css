@@ -32,9 +32,21 @@
 }
 
 .admin-link {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
   font-weight: 900;
   text-decoration: none;
+}
+
+.admin-link:hover {
+  border-color: rgba(197, 255, 69, 0.45);
+  transform: translateY(-1px);
 }
 
 .admin-login,
@@ -69,7 +81,7 @@
 
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
 }
 
@@ -108,6 +120,8 @@
 }
 
 .admin-inline-form input,
+.admin-devblog-form input,
+.admin-devblog-form textarea,
 .admin-question input,
 .admin-question textarea {
   width: 100%;
@@ -118,6 +132,28 @@
   background: rgba(255, 255, 255, 0.1);
   color: var(--text);
   font: inherit;
+}
+
+.admin-devblog-form {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-devblog-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.report-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.compact-admin {
+  min-height: 40px;
+  padding: 0 12px;
 }
 
 .admin-question textarea {
@@ -199,5 +235,9 @@
   .admin-stats,
   .admin-inline-form {
     grid-template-columns: 1fr;
+  }
+
+  .report-actions {
+    justify-content: flex-start;
   }
 }

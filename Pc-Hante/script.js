@@ -22,6 +22,8 @@ const ACHIEVEMENTS = [
   { id: "top_3", title: "Podium", text: "Entrer dans le top 3 global.", check: (profile) => profile.rank > 0 && profile.rank <= 3 },
   { id: "chat_first", title: "Premier message", text: "Envoyer un message dans le chat.", check: (profile) => profile.chatMessages >= 1 },
   { id: "chat_10", title: "Voix du groupe", text: "Envoyer 10 messages dans le chat.", check: (profile) => profile.chatMessages >= 10 },
+  { id: "level_5", title: "Niveau 5", text: "Atteindre le niveau 5.", check: (profile) => profile.level >= 5 },
+  { id: "level_10", title: "Niveau 10", text: "Atteindre le niveau 10.", check: (profile) => profile.level >= 10 },
   { id: "risk_taker", title: "Prise de risque", text: "Jouer au moins 5 parties avec 70% ou plus au global.", check: (profile) => profile.gamesPlayed >= 5 && profile.successRate >= 70 }
 ];
 
@@ -54,6 +56,7 @@ const ui = {
   finalCorrect: document.getElementById("finalCorrect"),
   finalRank: document.getElementById("finalRank"),
   finalTitle: document.getElementById("finalTitle"),
+  levelProgress: document.getElementById("levelProgress"),
   pseudoInput: document.getElementById("pseudoInput"),
   pseudoForm: document.getElementById("pseudoForm"),
   pseudoStatus: document.getElementById("pseudoStatus"),
@@ -467,6 +470,7 @@ async function renderEndScreen() {
   ui.finalCorrect.textContent = `${state.correct}/${TOTAL_QUESTIONS}`;
   ui.finalTitle.textContent = title;
   ui.finalRank.textContent = state.rank ? `#${state.rank}` : "#-";
+  ui.levelProgress.innerHTML = "<p>Calcul de ton niveau...</p>";
   ui.badgeList.innerHTML = `
     <span class="badge-preview">Meilleur streak: x${state.bestStreak}</span>
   `;
@@ -508,12 +512,31 @@ async function saveScore() {
     localStorage.setItem("majorite_pseudo", pseudo);
     localStorage.setItem("majorite_avatar", state.playerAvatar);
     ui.finalRank.textContent = `#${result.rank}`;
+    renderLevelProgress(result.playerStats || {});
     renderBadges(result.badges || []);
     ui.saveStatus.textContent = `Score enregistre. Rang global #${result.rank}.`;
     loadHomeTop();
   } catch (error) {
     ui.saveStatus.textContent = error.message;
   }
+}
+
+function renderLevelProgress(playerStats) {
+  const level = Number(playerStats.level || 1);
+  const xp = Number(playerStats.xp || 0);
+  const xpGained = Number(playerStats.xpGained || 0);
+  const currentLevelXp = Number(playerStats.currentLevelXp || ((level - 1) * (level - 1) * 120));
+  const nextLevelXp = Number(playerStats.nextLevelXp || (level * level * 120));
+  const percent = Math.max(0, Math.min(100, ((xp - currentLevelXp) / Math.max(nextLevelXp - currentLevelXp, 1)) * 100));
+
+  ui.levelProgress.innerHTML = `
+    <div class="level-row">
+      <strong>Niveau ${level}</strong>
+      <span>+${xpGained} XP</span>
+    </div>
+    <div class="level-track" aria-hidden="true"><span style="width: ${percent}%"></span></div>
+    <p>${xp}/${nextLevelXp} XP vers le niveau ${level + 1}</p>
+  `;
 }
 
 function renderBadges(badges) {
@@ -605,7 +628,7 @@ function renderLeaderboard(entries) {
     <li>
       <span class="rank">#${index + 1}</span>
       <span>
-        <span class="leader-name">${avatarHtml(entry.avatar, "avatar-mini")} ${escapeHtml(entry.pseudo)}</span>
+        <span class="leader-name">${avatarHtml(entry.avatar, "avatar-mini")} ${levelBadge(entry.level)} ${escapeHtml(entry.pseudo)}</span>
         <span class="leader-meta">${entry.gamesPlayed} partie${entry.gamesPlayed > 1 ? "s" : ""} - ${entry.totalCorrect}/${entry.totalQuestions} bonnes reponses - Streak x${entry.bestStreak || 0} - ${formatDate(entry.lastPlayedAt)}</span>
       </span>
       <span class="leader-score">${state.leaderboardMode === "streak" ? `x${entry.bestStreak || 0}` : formatPercent(entry.successRate)}</span>
@@ -616,6 +639,19 @@ function renderLeaderboard(entries) {
 function formatPercent(value) {
   const rounded = Number(value);
   return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
+}
+
+function levelProgressPercent(profile) {
+  const level = Number(profile.level || 1);
+  const xp = Number(profile.xp || 0);
+  const currentLevelXp = (level - 1) * (level - 1) * 120;
+  const nextLevelXp = level * level * 120;
+  const progress = ((xp - currentLevelXp) / Math.max(nextLevelXp - currentLevelXp, 1)) * 100;
+  return Math.max(0, Math.min(100, progress));
+}
+
+function levelBadge(level) {
+  return `<span class="level-badge">Niv. ${Number(level || 1)}</span>`;
 }
 
 function escapeHtml(value) {
@@ -667,9 +703,10 @@ function renderChat(messages) {
         ${avatarHtml(message.avatar, "avatar-mini")}
       </button>
       <div>
-        <button class="chat-name" type="button" data-profile="${escapeHtml(message.pseudo)}">${escapeHtml(message.pseudo)}</button>
+        <button class="chat-name" type="button" data-profile="${escapeHtml(message.pseudo)}">${levelBadge(message.player_level)} ${escapeHtml(message.pseudo)}</button>
         <time>${formatTime(message.created_at)}</time>
         <p>${escapeHtml(message.message)}</p>
+        <button class="report-button" type="button" data-report="${escapeHtml(message.id)}">Signaler</button>
       </div>
     </article>
   `).join("");
@@ -706,6 +743,20 @@ async function sendChatMessage(event) {
   }
 }
 
+async function reportChatMessage(id) {
+  if (!confirm("Signaler ce message a l'admin ?")) return;
+
+  try {
+    await api("/api/chat/report", {
+      method: "POST",
+      body: JSON.stringify({ id, reason: "Signale depuis le chat" })
+    });
+    showToast("Message signale.");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
 async function openPlayerProfile(pseudo) {
   ui.profileModal.classList.remove("hidden");
   ui.profileContent.innerHTML = "<p class=\"empty-state\">Chargement du profil...</p>";
@@ -718,11 +769,12 @@ async function openPlayerProfile(pseudo) {
         ${avatarHtml(profile.avatar, "avatar-chip")}
         <div>
           <h2>${escapeHtml(profile.pseudo)}</h2>
-          <p>Rang global #${profile.rank || "-"}</p>
+          <p>${levelBadge(profile.level)} Rang global #${profile.rank || "-"}</p>
         </div>
       </header>
       <div class="profile-stats">
         <article><strong>${profile.gamesPlayed || 0}</strong><span>parties</span></article>
+        <article><strong>${profile.level || 1}</strong><span>niveau</span></article>
         <article><strong>${formatPercent(profile.successRate || 0)}</strong><span>reussite</span></article>
         <article><strong>x${profile.bestStreak || 0}</strong><span>streak</span></article>
         <article><strong>${profile.chatMessages || 0}</strong><span>messages</span></article>
@@ -765,6 +817,12 @@ ui.chatToggle.addEventListener("click", () => {
 ui.chatClose.addEventListener("click", () => ui.chatBox.classList.add("hidden"));
 ui.chatForm.addEventListener("submit", sendChatMessage);
 ui.chatMessages.addEventListener("click", (event) => {
+  const reportButton = event.target.closest("[data-report]");
+  if (reportButton) {
+    reportChatMessage(reportButton.dataset.report);
+    return;
+  }
+
   const button = event.target.closest("[data-profile]");
   if (!button) return;
   openPlayerProfile(button.dataset.profile);
