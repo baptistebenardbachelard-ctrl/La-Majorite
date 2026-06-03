@@ -30,11 +30,32 @@
       </form>
 
       <section id="adminContent" class="admin-content hidden">
+        <div id="adminStats" class="admin-stats"></div>
+
         <div class="admin-actions">
           <button id="refreshScores" class="secondary-button" type="button">Actualiser</button>
           <button id="resetScores" class="ghost-button danger-action" type="button">Reset classement</button>
           <button id="resetAll" class="ghost-button danger-action" type="button">Reset votes + scores</button>
         </div>
+
+        <section class="admin-section">
+          <h2>Moderation</h2>
+          <form id="blockForm" class="admin-inline-form">
+            <input id="blockPseudo" type="text" maxlength="18" placeholder="Pseudo a bloquer">
+            <input id="blockReason" type="text" maxlength="120" placeholder="Raison">
+            <button class="ghost-button danger-action" type="submit">Bloquer</button>
+          </form>
+          <div id="blockedList" class="admin-list compact-list"></div>
+        </section>
+
+        <section class="admin-section">
+          <h2>Questions</h2>
+          <form id="questionSearchForm" class="admin-inline-form">
+            <input id="questionSearch" type="text" placeholder="Chercher une question">
+            <button class="secondary-button" type="submit">Chercher</button>
+          </form>
+          <div id="questionsList" class="admin-list"></div>
+        </section>
 
         <p id="adminStatus" class="save-status" aria-live="polite"></p>
         <div id="scoresList" class="admin-list"></div>

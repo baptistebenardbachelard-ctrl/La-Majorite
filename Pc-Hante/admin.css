@@ -42,6 +42,15 @@
   margin-top: 24px;
 }
 
+.admin-content {
+  display: grid;
+  gap: 22px;
+}
+
+.admin-content.hidden {
+  display: none;
+}
+
 .admin-login {
   display: grid;
   gap: 10px;
@@ -56,6 +65,85 @@
   display: grid;
   gap: 10px;
   margin-top: 18px;
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.admin-stats article,
+.blocked-row,
+.admin-question {
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-stats strong {
+  display: block;
+  font-size: 1.8rem;
+}
+
+.admin-stats span {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.admin-section {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-section h2 {
+  font-size: 1.45rem;
+}
+
+.admin-inline-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+}
+
+.admin-inline-form input,
+.admin-question input,
+.admin-question textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  font: inherit;
+}
+
+.admin-question textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+.admin-question label {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.question-meta,
+.blocked-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.small-actions {
+  justify-content: flex-start;
+  margin-top: 10px;
 }
 
 .admin-score {
@@ -105,6 +193,11 @@
   }
 
   .admin-score {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-stats,
+  .admin-inline-form {
     grid-template-columns: 1fr;
   }
 }

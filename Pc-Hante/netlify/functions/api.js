@@ -1,12 +1,14 @@
-const { createClient } = require("@supabase/supabase-js");
+const allowedOrigin = process.env.SITE_ORIGIN || "https://lamajorite.netlify.app";
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
   "cache-control": "no-store",
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "GET, POST, OPTIONS",
-  "access-control-allow-headers": "Content-Type"
+  "access-control-allow-origin": allowedOrigin,
+  "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+  "access-control-allow-headers": "Content-Type, X-Admin-Token",
+  "x-content-type-options": "nosniff"
 };
+const API_VERSION = "supabase-fetch-v3-admin";
 
 function json(statusCode, body) {
   return {
@@ -16,16 +18,51 @@ function json(statusCode, body) {
   };
 }
 
-function getSupabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+function supabaseConfig() {
+  const rawUrl = process.env.SUPABASE_URL || "";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const url = rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/$/, "");
 
   if (!url || !key) {
     throw new Error("Variables SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY manquantes.");
   }
 
-  return createClient(url, key, {
-    auth: { persistSession: false }
+  if (!url.startsWith("https://") || !url.includes(".supabase.co")) {
+    throw new Error("SUPABASE_URL doit ressembler a https://xxxx.supabase.co");
+  }
+
+  return { url, key };
+}
+
+async function supabaseFetch(path, options = {}) {
+  const { url, key } = supabaseConfig();
+  const response = await fetch(`${url}/rest/v1${path}`, {
+    ...options,
+    headers: {
+      apikey: key,
+      authorization: `Bearer ${key}`,
+      "content-type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+
+  if (!response.ok) {
+    const message = data?.message || data?.hint || text || `Erreur Supabase ${response.status}`;
+    const error = new Error(message);
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  return data;
+}
+
+async function supabaseRpc(functionName, payload = {}) {
+  return supabaseFetch(`/rpc/${functionName}`, {
+    method: "POST",
+    body: JSON.stringify(payload)
   });
 }
 
@@ -45,17 +82,12 @@ async function readBody(event) {
       : event.body;
     return JSON.parse(text);
   } catch (error) {
-    throw new Error("Corps de la requete invalide : " + error.message);
+    throw new Error(`Corps de requete invalide: ${error.message}`);
   }
 }
 
-async function getQuestions(supabase) {
-  const { data, error } = await supabase
-    .from("questions")
-    .select("id, question, choice_a, choice_b")
-    .order("id", { ascending: true });
-
-  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+async function getQuestions() {
+  const data = await supabaseFetch("/questions?select=id,question,choice_a,choice_b&order=id.asc");
 
   return json(200, {
     questions: data.map((question) => ({
@@ -67,20 +99,22 @@ async function getQuestions(supabase) {
   });
 }
 
-async function getLeaderboard(supabase, event) {
-  const mode = event.queryStringParameters?.mode === "today" ? "today" : "global";
-  const view = mode === "today" ? "leaderboard_today" : "leaderboard_global";
-
-  const { data, error } = await supabase
-    .from(view)
-    .select("pseudo, games_played, total_score, total_correct, total_questions, success_rate, average_score, best_game_percent, last_played_at")
-    .limit(50);
-
-  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+async function getLeaderboard(event) {
+  const requestedMode = event.queryStringParameters?.mode;
+  const mode = ["today", "streak"].includes(requestedMode) ? requestedMode : "global";
+  const view = mode === "today"
+    ? "leaderboard_today"
+    : mode === "streak"
+      ? "leaderboard_streak"
+      : "leaderboard_global";
+  const data = await supabaseFetch(
+    `/${view}?select=pseudo,avatar,games_played,total_score,total_correct,total_questions,success_rate,average_score,best_game_percent,best_streak,last_played_at&limit=50`
+  );
 
   return json(200, {
     entries: data.map((entry) => ({
       pseudo: entry.pseudo,
+      avatar: entry.avatar,
       gamesPlayed: entry.games_played,
       totalScore: entry.total_score,
       totalCorrect: entry.total_correct,
@@ -88,175 +122,305 @@ async function getLeaderboard(supabase, event) {
       successRate: Number(entry.success_rate),
       averageScore: Number(entry.average_score),
       bestGamePercent: Number(entry.best_game_percent),
+      bestStreak: Number(entry.best_streak || 0),
       lastPlayedAt: entry.last_played_at
     }))
   });
 }
 
-async function postVote(supabase, event) {
+async function postRpc(functionName, payload, successCode = 200) {
+  const data = await supabaseRpc(functionName, payload);
+  return json(successCode, data);
+}
+
+async function postVote(event) {
   const body = await readBody(event);
-  const { data, error } = await supabase.rpc("submit_vote", {
+  return postRpc("submit_vote", {
     p_game_id: String(body.gameId || ""),
     p_question_id: String(body.questionId || ""),
     p_choice: String(body.choice || "")
   });
-
-  if (error) {
-    const duplicate = error.message.includes("deja ete votee");
-    return json(duplicate ? 409 : 400, { error: error.message });
-  }
-
-  return json(200, data);
 }
 
-async function postScore(supabase, event) {
+async function postScore(event) {
   const body = await readBody(event);
-  const { data, error } = await supabase.rpc("save_game_score", {
+  return postRpc("save_game_score", {
     p_game_id: String(body.gameId || ""),
     p_pseudo: String(body.pseudo || ""),
-    p_title: String(body.title || "")
-  });
-
-  if (error) {
-    const duplicate = error.message.includes("deja enregistre");
-    return json(duplicate ? 409 : 400, { error: error.message });
-  }
-
-  return json(201, data);
+    p_title: String(body.title || ""),
+    p_avatar: String(body.avatar || "avatar-1"),
+    p_best_streak: Number(body.bestStreak || 0)
+  }, 201);
 }
 
-function checkAdminToken(event) {
-  const token = event.headers?.["x-admin-token"] || event.headers?.["X-Admin-Token"] || "";
-  const adminToken = process.env.ADMIN_TOKEN || "";
+async function getChat(event) {
+  const limit = Math.min(Number(event.queryStringParameters?.limit || 40), 80);
+  const data = await supabaseFetch(
+    `/chat_messages?select=id,pseudo,avatar,message,created_at&order=created_at.desc&limit=${limit}`
+  );
+  return json(200, { messages: data.reverse() });
+}
 
-  if (!adminToken) {
-    throw new Error("Token admin non configuré sur le serveur.");
+async function postChat(event) {
+  const body = await readBody(event);
+  const pseudo = String(body.pseudo || "").trim().slice(0, 18);
+  const avatar = String(body.avatar || "avatar-1").trim().slice(0, 24);
+  const message = String(body.message || "").trim().slice(0, 240);
+
+  if (!pseudo || !message) {
+    return json(400, { error: "Pseudo ou message manquant." });
   }
 
-  if (token !== adminToken) {
-    const error = new Error("Token admin invalide.");
-    error.statusCode = 403;
+  const blocked = await supabaseFetch(
+    `/blocked_pseudos?select=pseudo_key&pseudo_key=eq.${encodeURIComponent(pseudo.toLowerCase())}&limit=1`
+  );
+  if (blocked.length) {
+    return json(403, { error: "Ce pseudo est bloque." });
+  }
+
+  const data = await supabaseFetch("/chat_messages", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({ pseudo, avatar, message })
+  });
+
+  return json(201, { message: data[0] });
+}
+
+function requireAdmin(event) {
+  const expected = process.env.ADMIN_TOKEN;
+  const provided = event.headers["x-admin-token"] || event.headers["X-Admin-Token"];
+
+  if (!expected || expected.length < 24) {
+    const error = new Error("ADMIN_TOKEN manquant ou trop court dans Netlify.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  if (!provided || provided !== expected) {
+    const error = new Error("Acces admin refuse.");
+    error.statusCode = 401;
     throw error;
   }
 }
 
-async function getAdminScores(supabase) {
-  const { data, error } = await supabase
-    .from("scores")
-    .select("id, game_id, pseudo, score, correct, total, success_rate, title, day, created_at")
-    .order("created_at", { ascending: false });
+async function adminScores(event) {
+  requireAdmin(event);
+  const limit = Math.min(Number(event.queryStringParameters?.limit || 100), 250);
+  const data = await supabaseFetch(
+    `/scores?select=id,game_id,pseudo,avatar,score,correct,total,success_rate,best_streak,title,created_at&order=created_at.desc&limit=${limit}`
+  );
+  return json(200, { scores: data });
+}
 
-  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+async function adminStats(event) {
+  requireAdmin(event);
+  const [scores, votes, questions, chat, blocked] = await Promise.all([
+    supabaseFetch("/scores?select=id,pseudo", { headers: { Prefer: "count=exact" } }),
+    supabaseFetch("/votes?select=id", { headers: { Prefer: "count=exact" } }),
+    supabaseFetch("/questions?select=id", { headers: { Prefer: "count=exact" } }),
+    supabaseFetch("/chat_messages?select=id", { headers: { Prefer: "count=exact" } }),
+    supabaseFetch("/blocked_pseudos?select=pseudo_key,pseudo,reason,created_at&order=created_at.desc")
+  ]);
+  const pseudos = new Set(scores.map((score) => String(score.pseudo || "").trim().toLowerCase()).filter(Boolean));
 
   return json(200, {
-    scores: data.map((score) => ({
-      id: score.id,
-      gameId: score.game_id,
-      pseudo: score.pseudo,
-      score: score.score,
-      correct: score.correct,
-      total: score.total,
-      successRate: Number(score.success_rate),
-      title: score.title,
-      day: score.day,
-      createdAt: score.created_at
-    }))
+    players: pseudos.size,
+    games: scores.length,
+    answeredQuestions: votes.length,
+    questions: questions.length,
+    chatMessages: chat.length,
+    blocked
   });
 }
 
-async function deleteScore(supabase, event) {
-  const body = await readBody(event);
-  const scoreId = String(body.id || "");
+async function adminQuestions(event) {
+  requireAdmin(event);
+  const search = String(event.queryStringParameters?.search || "").trim();
+  const limit = Math.min(Number(event.queryStringParameters?.limit || 40), 100);
+  const filter = search ? `&question=ilike.*${encodeURIComponent(search)}*` : "";
+  const data = await supabaseFetch(
+    `/questions?select=id,question,choice_a,choice_b,votes_a,votes_b,seed_votes_a,seed_votes_b&order=id.asc&limit=${limit}${filter}`
+  );
+  return json(200, { questions: data });
+}
 
-  if (!scoreId) {
-    throw new Error("ID du score requis.");
+async function adminDeleteScore(event) {
+  requireAdmin(event);
+  const body = await readBody(event);
+  const id = String(body.id || "");
+  if (!id) return json(400, { error: "ID de score manquant." });
+
+  await supabaseFetch(`/scores?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+
+  return json(200, { ok: true });
+}
+
+async function adminResetScores(event) {
+  requireAdmin(event);
+  await supabaseRpc("admin_reset_scores");
+  return json(200, { ok: true });
+}
+
+async function adminResetAll(event) {
+  requireAdmin(event);
+  await supabaseRpc("admin_reset_all");
+  return json(200, { ok: true });
+}
+
+async function adminResetQuestion(event) {
+  requireAdmin(event);
+  const body = await readBody(event);
+  const id = String(body.id || "");
+  if (!id) return json(400, { error: "ID de question manquant." });
+  const data = await supabaseRpc("admin_reset_question", { p_question_id: id });
+  return json(200, data);
+}
+
+async function adminUpdateQuestion(event) {
+  requireAdmin(event);
+  const body = await readBody(event);
+  const id = String(body.id || "");
+  const question = String(body.question || "").trim();
+  const choiceA = String(body.choiceA || "").trim();
+  const choiceB = String(body.choiceB || "").trim();
+
+  if (!id || !question || !choiceA || !choiceB) {
+    return json(400, { error: "Question ou choix manquant." });
   }
 
-  const { error } = await supabase
-    .from("scores")
-    .delete()
-    .eq("id", scoreId);
+  const data = await supabaseFetch(`/questions?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      question: question.slice(0, 220),
+      choice_a: choiceA.slice(0, 160),
+      choice_b: choiceB.slice(0, 160)
+    })
+  });
 
-  if (error) { throw new Error(error.message || JSON.stringify(error)); }
-
-  return json(200, { message: "Score supprimé." });
+  return json(200, { question: data[0] });
 }
 
-async function resetScores(supabase) {
-  const { data, error } = await supabase.rpc("admin_reset_scores");
+async function adminBlockPseudo(event) {
+  requireAdmin(event);
+  const body = await readBody(event);
+  const pseudo = String(body.pseudo || "").trim().slice(0, 18);
+  const reason = String(body.reason || "").trim().slice(0, 120);
+  if (!pseudo) return json(400, { error: "Pseudo manquant." });
 
-  if (error) { throw new Error(error.message || JSON.stringify(error)); }
+  const data = await supabaseFetch("/blocked_pseudos", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+    body: JSON.stringify({
+      pseudo,
+      pseudo_key: pseudo.toLowerCase(),
+      reason
+    })
+  });
 
-  return json(200, { message: "Scores réinitialisés.", data });
+  return json(201, { blocked: data[0] });
 }
 
-async function resetAll(supabase) {
-  const { data, error } = await supabase.rpc("admin_reset_all");
-
-  if (error) { throw new Error(error.message || JSON.stringify(error)); }
-
-  return json(200, { message: "Toutes les données réinitialisées.", data });
+async function adminUnblockPseudo(event) {
+  requireAdmin(event);
+  const body = await readBody(event);
+  const pseudo = String(body.pseudo || "").trim().toLowerCase();
+  if (!pseudo) return json(400, { error: "Pseudo manquant." });
+  await supabaseFetch(`/blocked_pseudos?pseudo_key=eq.${encodeURIComponent(pseudo)}`, {
+    method: "DELETE"
+  });
+  return json(200, { ok: true });
 }
 
 exports.handler = async (event) => {
-  // Handle CORS preflight requests
-  if (event.httpMethod === "OPTIONS") {
-    return json(204, {});
-  }
-
-  // Health check endpoint
-  if (event.httpMethod === "GET" && routePath(event) === "/health") {
-    return json(200, { status: "ok" });
-  }
-
   try {
-    const supabase = getSupabase();
     const path = routePath(event);
 
-    // Admin routes
-    if (path.startsWith("/admin")) {
-      try {
-        checkAdminToken(event);
-      } catch (error) {
-        return json(error.statusCode || 403, { error: error.message });
-      }
-
-      if (event.httpMethod === "GET" && path === "/admin/scores") {
-        return await getAdminScores(supabase);
-      }
-
-      if (event.httpMethod === "POST" && path === "/admin/delete-score") {
-        return await deleteScore(supabase, event);
-      }
-
-      if (event.httpMethod === "POST" && path === "/admin/reset-scores") {
-        return await resetScores(supabase);
-      }
-
-      if (event.httpMethod === "POST" && path === "/admin/reset-all") {
-        return await resetAll(supabase);
-      }
+    if (event.httpMethod === "OPTIONS") {
+      return json(204, {});
     }
 
-    // Public routes
+    if (event.httpMethod === "GET" && path === "/version") {
+      return json(200, { ok: true, version: API_VERSION });
+    }
+
+    if (event.httpMethod === "GET" && path === "/health") {
+      return json(200, { status: "ok", version: API_VERSION });
+    }
+
     if (event.httpMethod === "GET" && path === "/questions") {
-      return await getQuestions(supabase);
+      return getQuestions();
     }
 
     if (event.httpMethod === "GET" && path === "/leaderboard") {
-      return await getLeaderboard(supabase, event);
+      return getLeaderboard(event);
     }
 
     if (event.httpMethod === "POST" && path === "/vote") {
-      return await postVote(supabase, event);
+      return postVote(event);
     }
 
     if (event.httpMethod === "POST" && path === "/scores") {
-      return await postScore(supabase, event);
+      return postScore(event);
     }
 
-    return json(404, { error: "Route API introuvable." });
+    if (event.httpMethod === "GET" && path === "/chat") {
+      return getChat(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/chat") {
+      return postChat(event);
+    }
+
+    if (event.httpMethod === "GET" && path === "/admin/scores") {
+      return adminScores(event);
+    }
+
+    if (event.httpMethod === "GET" && path === "/admin/stats") {
+      return adminStats(event);
+    }
+
+    if (event.httpMethod === "GET" && path === "/admin/questions") {
+      return adminQuestions(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/delete-score") {
+      return adminDeleteScore(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/reset-scores") {
+      return adminResetScores(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/reset-all") {
+      return adminResetAll(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/reset-question") {
+      return adminResetQuestion(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/update-question") {
+      return adminUpdateQuestion(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/block-pseudo") {
+      return adminBlockPseudo(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/unblock-pseudo") {
+      return adminUnblockPseudo(event);
+    }
+
+    return json(404, { error: "Route API introuvable.", path });
   } catch (error) {
-    return json(500, { error: error.message || JSON.stringify(error) || "Erreur serveur." });
+    const statusCode = error.statusCode && error.statusCode < 500 ? error.statusCode : 500;
+    return json(statusCode, {
+      error: error.message || String(error),
+      statusCode
+    });
   }
 };

@@ -27,6 +27,13 @@
           <h1 id="homeTitle">Pense comme la majorit&eacute;.</h1>
           <p class="lead">25 dilemmes absurdes, moraux ou genants. Vote, decouvre les vrais pourcentages, marque des points.</p>
         </div>
+        <aside class="home-top-card" aria-label="Top du jour">
+          <div>
+            <span class="mini-label">Top du jour</span>
+            <strong id="homeTopName">Chargement...</strong>
+          </div>
+          <span id="homeTopScore">--</span>
+        </aside>
         <div class="home-actions">
           <button id="playButton" class="primary-button" type="button">Jouer</button>
           <button id="leaderboardButton" class="secondary-button" type="button">Classement</button>
@@ -47,6 +54,10 @@
           <div class="score-pill">
             <span>Score</span>
             <strong id="liveScore">0</strong>
+          </div>
+          <div class="score-pill streak-pill">
+            <span>Streak</span>
+            <strong id="liveStreak">0</strong>
           </div>
         </header>
 
@@ -89,6 +100,8 @@
             <input id="pseudoInput" name="pseudo" type="text" maxlength="18" autocomplete="nickname" placeholder="Ton pseudo" required>
             <button class="primary-button compact" type="submit">Jouer</button>
           </div>
+          <label>Avatar</label>
+          <div id="avatarGrid" class="avatar-grid" aria-label="Choix de l'avatar"></div>
           <p id="pseudoStatus" class="save-status" aria-live="polite">Ton score sera ajoute automatiquement au classement a la fin.</p>
         </form>
       </div>
@@ -114,6 +127,7 @@
             </div>
           </div>
           <p id="finalTitle" class="player-title">Alien social</p>
+          <div id="badgeList" class="badge-list" aria-label="Badges debloques"></div>
         </div>
 
         <p id="saveStatus" class="save-status" aria-live="polite"></p>
@@ -136,6 +150,7 @@
         <div class="tabs" role="tablist" aria-label="Type de classement">
           <button id="globalTab" class="tab active" type="button" role="tab" aria-selected="true">Top global</button>
           <button id="todayTab" class="tab" type="button" role="tab" aria-selected="false">Top du jour</button>
+          <button id="streakTab" class="tab" type="button" role="tab" aria-selected="false">Streak</button>
         </div>
         <ol id="leaderboardList" class="leaderboard-list"></ol>
       </div>
@@ -156,6 +171,23 @@
     </section>
   </main>
 
+  <section id="chatPanel" class="chat-panel" aria-label="Chat du jeu">
+    <button id="chatToggle" class="chat-toggle" type="button">Chat</button>
+    <div id="chatBox" class="chat-box hidden">
+      <header>
+        <strong>Chat</strong>
+        <button id="chatClose" class="icon-button" type="button" aria-label="Fermer">x</button>
+      </header>
+      <div id="chatMessages" class="chat-messages"></div>
+      <form id="chatForm" class="chat-form">
+        <input id="chatInput" type="text" maxlength="240" placeholder="Message...">
+        <button class="primary-button compact" type="submit">Envoyer</button>
+      </form>
+      <p id="chatStatus" class="save-status"></p>
+    </div>
+  </section>
+
+  <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true">Son: on</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="script.js"></script>
 </body>
