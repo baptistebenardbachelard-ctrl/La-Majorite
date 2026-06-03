@@ -23,7 +23,7 @@
           <img class="hero-logo" src="assets/logo-majorite.png" alt="Logo La Majorit&eacute;">
           <p class="eyebrow">Devine le vote collectif</p>
           <h1 id="homeTitle">Pense comme la majorit&eacute;.</h1>
-          <p class="lead">25 dilemmes absurdes, moraux ou genants. Vote, decouvre les vrais pourcentages, marque des points.</p>
+          <p class="lead">Choisis un mode, joue 25 dilemmes, decouvre les vrais pourcentages et marque des points.</p>
         </div>
         <aside class="home-top-card" aria-label="Top du jour">
           <div>
@@ -107,6 +107,18 @@
       </div>
     </section>
 
+    <section id="modeScreen" class="screen" aria-labelledby="modeTitle">
+      <div class="story-frame board-frame mode-frame">
+        <header class="board-header">
+          <button class="icon-button" data-nav="home" type="button" aria-label="Retour">&lt;</button>
+          <h2 id="modeTitle">Choisis ton mode</h2>
+          <button id="refreshModes" class="icon-button" type="button" aria-label="Actualiser">R</button>
+        </header>
+        <p id="modeStatus" class="save-status">Chaque mode contient 25 questions. Une fois termine, il est verrouille pour ton pseudo.</p>
+        <div id="modeGrid" class="mode-grid"></div>
+      </div>
+    </section>
+
     <section id="endScreen" class="screen" aria-labelledby="endTitle">
       <div class="story-frame end-frame">
         <div class="share-card" id="shareCard">
@@ -152,6 +164,7 @@
           <button id="globalTab" class="tab active" type="button" role="tab" aria-selected="true">Top global</button>
           <button id="todayTab" class="tab" type="button" role="tab" aria-selected="false">Top du jour</button>
           <button id="streakTab" class="tab" type="button" role="tab" aria-selected="false">Streak</button>
+          <button id="levelTab" class="tab" type="button" role="tab" aria-selected="false">Niveaux</button>
         </div>
         <ol id="leaderboardList" class="leaderboard-list"></ol>
       </div>
@@ -194,6 +207,7 @@
     <a href="https://discord.gg/6pBdYZbzGq" target="_blank" rel="noopener noreferrer">Discord</a>
     <span aria-hidden="true">|</span>
     <a href="devblog.html">Devblog</a>
+    <span class="site-version">Version beta 1.5.0</span>
   </footer>
 
   <section id="chatPanel" class="chat-panel" aria-label="Chat du jeu">

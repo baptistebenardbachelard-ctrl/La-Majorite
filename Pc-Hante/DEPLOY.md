@@ -9,6 +9,8 @@ Le site utilise Supabase pour stocker les questions, votes, pseudos, reponses et
 3. Executer `supabase/schema.sql`.
 4. Executer `supabase/seed_questions.sql`.
 
+Important : `seed_questions.sql` remet a zero les anciennes questions, les votes, les scores et l'XP des joueurs. Les pseudos/joueurs restent conserves.
+
 ## 2. Configurer Netlify
 
 Dans Netlify, ajouter ces variables d'environnement :
@@ -28,9 +30,13 @@ Netlify installera les dependances puis utilisera `netlify/functions/api.js` pou
 
 ```txt
 /api/questions
+/api/modes
 /api/vote
 /api/scores
-/api/leaderboard
+/api/leaderboard?mode=global
+/api/leaderboard?mode=today
+/api/leaderboard?mode=streak
+/api/leaderboard?mode=level
 /api/admin/scores
 ```
 
@@ -50,6 +56,32 @@ Actions disponibles :
 - supprimer une partie test
 - reset du classement
 - reset complet votes + scores
+- modifier les questions et leur mode
+
+## Modes de jeu
+
+Le jeu contient 14 modes de 25 questions :
+
+- Nourriture
+- Films cultes
+- Series
+- Jeux video
+- Musique
+- Reseaux sociaux
+- Amour
+- Ecole / travail
+- Vie quotidienne
+- Super-pouvoirs
+- Argent / luxe
+- Impossible
+- Genant
+- Generation Internet
+
+Quand un joueur termine un mode, ce mode est verrouille pour lui. Il doit choisir un autre mode pour rejouer.
+
+## Classement des niveaux
+
+Le classement contient aussi un onglet `Niveaux`. Il utilise la vue Supabase `leaderboard_level`, trie les joueurs par niveau, puis XP, puis nombre de modes termines.
 
 ## Test local serveur classique
 

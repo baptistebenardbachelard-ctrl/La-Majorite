@@ -2,6 +2,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.questions (
   id text primary key,
+  category text not null default 'general',
   question text not null,
   choice_a text not null,
   choice_b text not null,
@@ -18,6 +19,9 @@ alter table public.questions
 alter table public.questions
   add column if not exists seed_votes_b integer not null default 0 check (seed_votes_b >= 0);
 
+alter table public.questions
+  add column if not exists category text not null default 'general';
+
 create table if not exists public.votes (
   id uuid primary key default gen_random_uuid(),
   game_id text not null,
@@ -32,6 +36,7 @@ create table if not exists public.votes (
 create table if not exists public.scores (
   id uuid primary key default gen_random_uuid(),
   game_id text not null unique,
+  mode text not null default 'general',
   pseudo text not null,
   pseudo_key text generated always as (lower(trim(pseudo))) stored,
   avatar text not null default 'avatar-1',
@@ -51,6 +56,9 @@ alter table public.scores
 alter table public.scores
   add column if not exists best_streak integer not null default 0 check (best_streak >= 0);
 
+alter table public.scores
+  add column if not exists mode text not null default 'general';
+
 create table if not exists public.blocked_pseudos (
   pseudo_key text primary key,
   pseudo text not null,
@@ -63,9 +71,17 @@ create table if not exists public.players (
   pseudo text not null,
   pseudo_key text generated always as (lower(trim(pseudo))) stored unique,
   avatar text not null default 'avatar-1',
+  xp integer not null default 0 check (xp >= 0),
+  level integer not null default 1 check (level >= 1),
   created_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
 );
+
+alter table public.players
+  add column if not exists xp integer not null default 0 check (xp >= 0);
+
+alter table public.players
+  add column if not exists level integer not null default 1 check (level >= 1);
 
 create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),
@@ -73,8 +89,21 @@ create table if not exists public.chat_messages (
   pseudo text not null,
   pseudo_key text generated always as (lower(trim(pseudo))) stored,
   avatar text not null default 'avatar-1',
+  player_level integer not null default 1 check (player_level >= 1),
   message text not null check (char_length(trim(message)) between 1 and 240),
+  reported boolean not null default false,
+  report_reason text,
+  reported_at timestamptz,
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.devblog_posts (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  content text not null,
+  published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 alter table public.scores
@@ -83,9 +112,25 @@ alter table public.scores
 alter table public.chat_messages
   add column if not exists player_id uuid references public.players(id) on delete set null;
 
+alter table public.chat_messages
+  add column if not exists player_level integer not null default 1 check (player_level >= 1);
+
+alter table public.chat_messages
+  add column if not exists reported boolean not null default false;
+
+alter table public.chat_messages
+  add column if not exists report_reason text;
+
+alter table public.chat_messages
+  add column if not exists reported_at timestamptz;
+
+create index if not exists devblog_posts_created_at_idx on public.devblog_posts (created_at desc);
+
 create index if not exists votes_game_id_idx on public.votes (game_id);
+create index if not exists questions_category_idx on public.questions (category);
 create index if not exists scores_day_idx on public.scores (day);
 create index if not exists scores_pseudo_key_idx on public.scores (pseudo_key);
+create index if not exists scores_player_mode_idx on public.scores (player_id, mode);
 create index if not exists chat_messages_created_at_idx on public.chat_messages (created_at desc);
 
 alter table public.questions enable row level security;
@@ -94,61 +139,97 @@ alter table public.scores enable row level security;
 alter table public.blocked_pseudos enable row level security;
 alter table public.players enable row level security;
 alter table public.chat_messages enable row level security;
+alter table public.devblog_posts enable row level security;
+
+drop view if exists public.leaderboard_level;
+drop view if exists public.leaderboard_streak;
+drop view if exists public.leaderboard_today;
+drop view if exists public.leaderboard_global;
 
 create or replace view public.leaderboard_global as
 select
-  pseudo_key,
-  (array_agg(pseudo order by created_at desc))[1] as pseudo,
-  (array_agg(avatar order by created_at desc))[1] as avatar,
+  s.pseudo_key,
+  (array_agg(s.pseudo order by s.created_at desc))[1] as pseudo,
+  (array_agg(s.avatar order by s.created_at desc))[1] as avatar,
+  coalesce(max(p.level), 1)::integer as level,
+  coalesce(max(p.xp), 0)::integer as xp,
   count(*)::integer as games_played,
-  sum(score)::integer as total_score,
-  sum(correct)::integer as total_correct,
-  sum(total)::integer as total_questions,
-  round((sum(correct)::numeric / nullif(sum(total), 0)) * 100, 1) as success_rate,
-  round(avg(score), 1) as average_score,
-  max(success_rate) as best_game_percent,
-  max(best_streak)::integer as best_streak,
-  max(created_at) as last_played_at
-from public.scores
-group by pseudo_key
+  sum(s.score)::integer as total_score,
+  sum(s.correct)::integer as total_correct,
+  sum(s.total)::integer as total_questions,
+  round((sum(s.correct)::numeric / nullif(sum(s.total), 0)) * 100, 1) as success_rate,
+  round(avg(s.score), 1) as average_score,
+  max(s.success_rate) as best_game_percent,
+  max(s.best_streak)::integer as best_streak,
+  max(s.created_at) as last_played_at
+from public.scores s
+left join public.players p on p.pseudo_key = s.pseudo_key
+group by s.pseudo_key
 order by success_rate desc, games_played desc, total_correct desc, best_streak desc, average_score desc, last_played_at asc;
 
 create or replace view public.leaderboard_today as
 select
-  pseudo_key,
-  (array_agg(pseudo order by created_at desc))[1] as pseudo,
-  (array_agg(avatar order by created_at desc))[1] as avatar,
+  s.pseudo_key,
+  (array_agg(s.pseudo order by s.created_at desc))[1] as pseudo,
+  (array_agg(s.avatar order by s.created_at desc))[1] as avatar,
+  coalesce(max(p.level), 1)::integer as level,
+  coalesce(max(p.xp), 0)::integer as xp,
   count(*)::integer as games_played,
-  sum(score)::integer as total_score,
-  sum(correct)::integer as total_correct,
-  sum(total)::integer as total_questions,
-  round((sum(correct)::numeric / nullif(sum(total), 0)) * 100, 1) as success_rate,
-  round(avg(score), 1) as average_score,
-  max(success_rate) as best_game_percent,
-  max(best_streak)::integer as best_streak,
-  max(created_at) as last_played_at
-from public.scores
-where day = ((timezone('Europe/Paris', now()))::date)
-group by pseudo_key
+  sum(s.score)::integer as total_score,
+  sum(s.correct)::integer as total_correct,
+  sum(s.total)::integer as total_questions,
+  round((sum(s.correct)::numeric / nullif(sum(s.total), 0)) * 100, 1) as success_rate,
+  round(avg(s.score), 1) as average_score,
+  max(s.success_rate) as best_game_percent,
+  max(s.best_streak)::integer as best_streak,
+  max(s.created_at) as last_played_at
+from public.scores s
+left join public.players p on p.pseudo_key = s.pseudo_key
+where s.day = ((timezone('Europe/Paris', now()))::date)
+group by s.pseudo_key
 order by success_rate desc, games_played desc, total_correct desc, best_streak desc, average_score desc, last_played_at asc;
 
 create or replace view public.leaderboard_streak as
 select
-  pseudo_key,
-  (array_agg(pseudo order by best_streak desc, created_at desc))[1] as pseudo,
-  (array_agg(avatar order by best_streak desc, created_at desc))[1] as avatar,
+  s.pseudo_key,
+  (array_agg(s.pseudo order by s.best_streak desc, s.created_at desc))[1] as pseudo,
+  (array_agg(s.avatar order by s.best_streak desc, s.created_at desc))[1] as avatar,
+  coalesce(max(p.level), 1)::integer as level,
+  coalesce(max(p.xp), 0)::integer as xp,
   count(*)::integer as games_played,
-  sum(score)::integer as total_score,
-  sum(correct)::integer as total_correct,
-  sum(total)::integer as total_questions,
-  round((sum(correct)::numeric / nullif(sum(total), 0)) * 100, 1) as success_rate,
-  round(avg(score), 1) as average_score,
-  max(success_rate) as best_game_percent,
-  max(best_streak)::integer as best_streak,
-  max(created_at) as last_played_at
-from public.scores
-group by pseudo_key
+  sum(s.score)::integer as total_score,
+  sum(s.correct)::integer as total_correct,
+  sum(s.total)::integer as total_questions,
+  round((sum(s.correct)::numeric / nullif(sum(s.total), 0)) * 100, 1) as success_rate,
+  round(avg(s.score), 1) as average_score,
+  max(s.success_rate) as best_game_percent,
+  max(s.best_streak)::integer as best_streak,
+  max(s.created_at) as last_played_at
+from public.scores s
+left join public.players p on p.pseudo_key = s.pseudo_key
+group by s.pseudo_key
 order by best_streak desc, success_rate desc, games_played desc, last_played_at asc;
+
+create or replace view public.leaderboard_level as
+select
+  p.pseudo_key,
+  p.pseudo,
+  p.avatar,
+  p.level::integer as level,
+  p.xp::integer as xp,
+  coalesce(count(s.id), 0)::integer as games_played,
+  coalesce(sum(s.score), 0)::integer as total_score,
+  coalesce(sum(s.correct), 0)::integer as total_correct,
+  coalesce(sum(s.total), 0)::integer as total_questions,
+  coalesce(round((sum(s.correct)::numeric / nullif(sum(s.total), 0)) * 100, 1), 0) as success_rate,
+  coalesce(round(avg(s.score), 1), 0) as average_score,
+  coalesce(max(s.success_rate), 0) as best_game_percent,
+  coalesce(max(s.best_streak), 0)::integer as best_streak,
+  max(coalesce(s.created_at, p.last_seen_at)) as last_played_at
+from public.players p
+left join public.scores s on s.player_id = p.id
+group by p.id, p.pseudo_key, p.pseudo, p.avatar, p.level, p.xp
+order by p.level desc, p.xp desc, games_played desc, success_rate desc, p.last_seen_at asc;
 
 create or replace function public.submit_vote(
   p_game_id text,
@@ -236,6 +317,22 @@ exception
 end;
 $$;
 
+create or replace function public.level_for_xp(p_xp integer)
+returns integer
+language sql
+immutable
+as $$
+  select greatest(floor(sqrt(greatest(p_xp, 0)::numeric / 120))::integer + 1, 1);
+$$;
+
+create or replace function public.xp_for_level(p_level integer)
+returns integer
+language sql
+immutable
+as $$
+  select greatest((greatest(p_level, 1) - 1) * (greatest(p_level, 1) - 1) * 120, 0);
+$$;
+
 create or replace function public.register_player(
   p_player_id text,
   p_pseudo text,
@@ -292,7 +389,9 @@ begin
   return jsonb_build_object(
     'playerId', v_player.id,
     'pseudo', v_player.pseudo,
-    'avatar', v_player.avatar
+    'avatar', v_player.avatar,
+    'xp', v_player.xp,
+    'level', v_player.level
   );
 exception
   when unique_violation then
@@ -308,7 +407,8 @@ create or replace function public.save_game_score(
   p_title text default 'Joueur de la majorite',
   p_avatar text default 'avatar-1',
   p_best_streak integer default 0,
-  p_player_id text default null
+  p_player_id text default null,
+  p_mode text default 'general'
 )
 returns jsonb
 language plpgsql
@@ -326,9 +426,19 @@ declare
   v_best_streak integer;
   v_badges jsonb := '[]'::jsonb;
   v_player_id uuid;
+  v_xp_gained integer;
+  v_player public.players%rowtype;
+  v_previous_xp integer := 0;
+  v_previous_level integer := 1;
+  v_mode text;
 begin
   if nullif(trim(p_game_id), '') is null or nullif(trim(p_pseudo), '') is null then
     raise exception 'Score invalide.';
+  end if;
+
+  v_mode := lower(regexp_replace(trim(coalesce(nullif(p_mode, ''), 'general')), '[^a-z0-9_-]', '', 'g'));
+  if v_mode = '' then
+    v_mode := 'general';
   end if;
 
   if exists (
@@ -341,6 +451,18 @@ begin
     v_player_id := p_player_id::uuid;
 
     perform public.register_player(p_player_id, p_pseudo, p_avatar);
+    select * into v_player from public.players where id = v_player_id for update;
+    v_previous_xp := v_player.xp;
+    v_previous_level := v_player.level;
+
+    if exists (
+      select 1
+      from public.scores
+      where player_id = v_player_id
+        and mode = v_mode
+    ) then
+      raise exception 'Tu as deja termine ce mode. Choisis un autre mode.';
+    end if;
   end if;
 
   select
@@ -349,7 +471,9 @@ begin
     coalesce(sum(points), 0)::integer
   into v_total, v_correct, v_score
   from public.votes
-  where game_id = p_game_id;
+  join public.questions on questions.id = votes.question_id
+  where votes.game_id = p_game_id
+    and questions.category = v_mode;
 
   if v_total <> 25 then
     raise exception 'Termine les 25 questions avant d''enregistrer ton score.';
@@ -357,9 +481,10 @@ begin
 
   v_success_rate := round((v_correct::numeric / v_total) * 100, 2);
 
-  insert into public.scores (game_id, player_id, pseudo, avatar, score, correct, total, success_rate, best_streak, title)
+  insert into public.scores (game_id, mode, player_id, pseudo, avatar, score, correct, total, success_rate, best_streak, title)
   values (
     p_game_id,
+    v_mode,
     v_player_id,
     left(trim(p_pseudo), 18),
     left(coalesce(nullif(trim(p_avatar), ''), 'avatar-1'), 24),
@@ -389,6 +514,28 @@ begin
     v_badges := v_badges || jsonb_build_array('streak_5');
   end if;
 
+  v_xp_gained := 60 + (v_correct * 12) + (v_score * 6) + (greatest(coalesce(p_best_streak, 0), 0) * 8);
+
+  if v_player_id is not null then
+    update public.players
+    set
+      xp = xp + v_xp_gained,
+      level = public.level_for_xp(xp + v_xp_gained),
+      pseudo = left(trim(p_pseudo), 18),
+      avatar = left(coalesce(nullif(trim(p_avatar), ''), 'avatar-1'), 24),
+      last_seen_at = now()
+    where id = v_player_id
+    returning * into v_player;
+
+    if v_player.level >= 5 then
+      v_badges := v_badges || jsonb_build_array('level_5');
+    end if;
+
+    if v_player.level >= 10 then
+      v_badges := v_badges || jsonb_build_array('level_10');
+    end if;
+  end if;
+
   select ranked.rank into v_rank
   from (
     select pseudo_key, row_number() over (
@@ -404,7 +551,14 @@ begin
     'badges', v_badges,
     'playerStats', jsonb_build_object(
       'gamesPlayed', v_games_played,
-      'bestStreak', v_best_streak
+      'bestStreak', v_best_streak,
+      'xpGained', v_xp_gained,
+      'previousXp', v_previous_xp,
+      'previousLevel', v_previous_level,
+      'xp', coalesce(v_player.xp, v_xp_gained),
+      'level', coalesce(v_player.level, public.level_for_xp(v_xp_gained)),
+      'currentLevelXp', public.xp_for_level(coalesce(v_player.level, public.level_for_xp(v_xp_gained))),
+      'nextLevelXp', public.xp_for_level(coalesce(v_player.level, public.level_for_xp(v_xp_gained)) + 1)
     )
   );
 exception
@@ -423,6 +577,7 @@ set search_path = public
 as $$
 begin
   delete from public.scores;
+  update public.players set xp = 0, level = 1;
   return jsonb_build_object('ok', true);
 end;
 $$;
@@ -436,6 +591,7 @@ as $$
 begin
   delete from public.scores;
   delete from public.votes;
+  update public.players set xp = 0, level = 1;
   update public.questions
   set
     votes_a = seed_votes_a,
@@ -481,8 +637,8 @@ begin
   with generated as (
     select
       id,
-      80 + ((('x' || substr(md5(id || ':total'), 1, 7))::bit(28)::int) % 141) as total_votes,
-      52 + ((('x' || substr(md5(id || ':percent'), 1, 7))::bit(28)::int) % 27) as majority_percent,
+      3 + ((('x' || substr(md5(id || ':base'), 1, 7))::bit(28)::int) % 5) as base_votes,
+      1 + ((('x' || substr(md5(id || ':gap'), 1, 7))::bit(28)::int) % 2) as vote_gap,
       ((('x' || substr(md5(id || ':side'), 1, 7))::bit(28)::int) % 2) = 0 as a_is_majority
     from public.questions
   ),
@@ -490,12 +646,12 @@ begin
     select
       id,
       case
-        when a_is_majority then round(total_votes * majority_percent / 100.0)::int
-        else total_votes - round(total_votes * majority_percent / 100.0)::int
+        when a_is_majority then base_votes + vote_gap
+        else base_votes
       end as generated_a,
       case
-        when a_is_majority then total_votes - round(total_votes * majority_percent / 100.0)::int
-        else round(total_votes * majority_percent / 100.0)::int
+        when a_is_majority then base_votes
+        else base_votes + vote_gap
       end as generated_b
     from generated
   )

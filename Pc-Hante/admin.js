@@ -68,7 +68,7 @@ function renderScores(scores) {
     <article class="admin-score">
       <div>
         <strong>${escapeHtml(score.pseudo || "Sans pseudo")} - ${score.success_rate ?? 0}% - Streak x${score.best_streak ?? 0}</strong>
-        <span>${score.score ?? 0} pts - ${score.correct ?? 0}/${score.total ?? 0} - ${formatDate(score.created_at)}</span>
+        <span>Mode: ${escapeHtml(score.mode || "inconnu")} - ${score.score ?? 0} pts - ${score.correct ?? 0}/${score.total ?? 0} - ${formatDate(score.created_at)}</span>
         <span>game_id: ${escapeHtml(score.game_id || "inconnu")}</span>
       </div>
       <button class="delete-button" type="button" data-id="${score.id}">Supprimer</button>
@@ -139,8 +139,10 @@ function renderQuestions(questions) {
     <article class="admin-question" data-question-id="${escapeHtml(question.id)}">
       <div class="question-meta">
         <strong>${escapeHtml(question.id)}</strong>
-        <span>${question.votes_a}/${question.votes_b} votes</span>
+        <span>${escapeHtml(question.category || "general")} - ${question.votes_a}/${question.votes_b} votes</span>
       </div>
+      <label>Mode</label>
+      <input data-field="category" value="${escapeHtml(question.category || "general")}">
       <label>Question</label>
       <textarea data-field="question">${escapeHtml(question.question)}</textarea>
       <label>Choix A</label>
@@ -363,6 +365,7 @@ questionsList.addEventListener("click", async (event) => {
         method: "POST",
         body: JSON.stringify({
           id,
+          category: value("category"),
           question: value("question"),
           choiceA: value("choiceA"),
           choiceB: value("choiceB")

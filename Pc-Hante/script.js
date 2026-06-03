@@ -12,12 +12,12 @@ const AVATARS = [
 
 const ACHIEVEMENTS = [
   { id: "first_game", title: "Premiere partie", text: "Terminer ta premiere partie.", check: (profile) => profile.gamesPlayed >= 1 },
-  { id: "ten_games", title: "10 parties", text: "Terminer 10 parties avec le meme pseudo.", check: (profile) => profile.gamesPlayed >= 10 },
+  { id: "ten_games", title: "10 modes", text: "Terminer 10 modes avec le meme pseudo.", check: (profile) => profile.gamesPlayed >= 10 },
   { id: "streak_5", title: "Serie x5", text: "Faire 5 bonnes reponses d'affilee.", check: (profile) => profile.bestStreak >= 5 },
   { id: "streak_10", title: "Serie x10", text: "Faire 10 bonnes reponses d'affilee.", check: (profile) => profile.bestStreak >= 10 },
   { id: "perfect_game", title: "Partie parfaite", text: "Finir une partie a 100%.", check: (profile) => profile.bestGamePercent >= 100 },
   { id: "strong_game", title: "Lecteur solide", text: "Faire au moins 80% sur une partie.", check: (profile) => profile.bestGamePercent >= 80 },
-  { id: "regular", title: "Habitue", text: "Jouer 25 parties.", check: (profile) => profile.gamesPlayed >= 25 },
+  { id: "regular", title: "Tour complet", text: "Terminer les 14 modes disponibles.", check: (profile) => profile.gamesPlayed >= 14 },
   { id: "top_10", title: "Top 10", text: "Entrer dans le top 10 global.", check: (profile) => profile.rank > 0 && profile.rank <= 10 },
   { id: "top_3", title: "Podium", text: "Entrer dans le top 3 global.", check: (profile) => profile.rank > 0 && profile.rank <= 3 },
   { id: "chat_first", title: "Premier message", text: "Envoyer un message dans le chat.", check: (profile) => profile.chatMessages >= 1 },
@@ -30,6 +30,7 @@ const ACHIEVEMENTS = [
 const screens = {
   home: document.getElementById("homeScreen"),
   pseudo: document.getElementById("pseudoScreen"),
+  mode: document.getElementById("modeScreen"),
   game: document.getElementById("gameScreen"),
   end: document.getElementById("endScreen"),
   leaderboard: document.getElementById("leaderboardScreen"),
@@ -61,6 +62,9 @@ const ui = {
   pseudoForm: document.getElementById("pseudoForm"),
   pseudoStatus: document.getElementById("pseudoStatus"),
   avatarGrid: document.getElementById("avatarGrid"),
+  modeGrid: document.getElementById("modeGrid"),
+  modeStatus: document.getElementById("modeStatus"),
+  refreshModes: document.getElementById("refreshModes"),
   saveStatus: document.getElementById("saveStatus"),
   badgeList: document.getElementById("badgeList"),
   replayButton: document.getElementById("replayButton"),
@@ -69,6 +73,7 @@ const ui = {
   globalTab: document.getElementById("globalTab"),
   todayTab: document.getElementById("todayTab"),
   streakTab: document.getElementById("streakTab"),
+  levelTab: document.getElementById("levelTab"),
   leaderboardList: document.getElementById("leaderboardList"),
   refreshLeaderboard: document.getElementById("refreshLeaderboard"),
   achievementsList: document.getElementById("achievementsList"),
@@ -104,6 +109,8 @@ const state = {
   playerId: localStorage.getItem("majorite_player_id") || "",
   playerPseudo: "",
   playerAvatar: localStorage.getItem("majorite_avatar") || "avatar-1",
+  selectedMode: "",
+  modes: [],
   saved: false,
   rank: null,
   leaderboardMode: "global",
@@ -316,24 +323,79 @@ async function submitPseudo(event) {
     localStorage.setItem("majorite_player_id", state.playerId);
     localStorage.setItem("majorite_pseudo", state.playerPseudo);
     localStorage.setItem("majorite_avatar", state.playerAvatar);
-    startGame();
+    showModeSelection();
   } catch (error) {
     ui.pseudoStatus.textContent = error.message;
   }
 }
 
-async function startGame() {
+async function showModeSelection() {
   if (!state.playerPseudo) {
     askPseudo();
     return;
   }
 
+  ui.modeStatus.textContent = "Chargement des modes...";
+  ui.modeGrid.innerHTML = "";
+  showScreen("mode");
+
   try {
-    const data = await api("/api/questions");
+    const data = await api(`/api/modes?playerId=${encodeURIComponent(getPlayerId())}`);
+    state.modes = data.modes || [];
+    renderModes();
+  } catch (error) {
+    ui.modeStatus.textContent = error.message;
+  }
+}
+
+function renderModes() {
+  if (!state.modes.length) {
+    ui.modeGrid.innerHTML = "<p class=\"empty-state\">Aucun mode disponible pour l'instant.</p>";
+    return;
+  }
+
+  const available = state.modes.filter((mode) => !mode.locked && mode.totalQuestions >= TOTAL_QUESTIONS).length;
+  ui.modeStatus.textContent = available
+    ? `${available} mode(s) disponible(s). Termine un mode pour le verrouiller.`
+    : "Tu as termine tous les modes disponibles. Bravo, il faudra attendre une nouvelle mise a jour.";
+
+  ui.modeGrid.innerHTML = state.modes.map((mode) => {
+    const notReady = Number(mode.totalQuestions || 0) < TOTAL_QUESTIONS;
+    const locked = mode.locked || notReady;
+    return `
+      <button class="mode-card ${locked ? "locked" : ""}" type="button" data-mode="${escapeHtml(mode.id)}" ${locked ? "disabled" : ""}>
+        <span class="mode-kicker">${mode.completed ? "Termine" : `${mode.totalQuestions || 0} questions`}</span>
+        <strong>${escapeHtml(mode.title)}</strong>
+        <small>${escapeHtml(notReady ? "Mode incomplet dans la base" : mode.subtitle)}</small>
+      </button>
+    `;
+  }).join("");
+}
+
+async function startGame(modeId) {
+  if (!state.playerPseudo) {
+    askPseudo();
+    return;
+  }
+
+  const selectedMode = state.modes.find((mode) => mode.id === modeId);
+  if (!selectedMode) {
+    showModeSelection();
+    return;
+  }
+
+  if (selectedMode.locked) {
+    showToast("Tu as deja termine ce mode.");
+    return;
+  }
+
+  try {
+    const data = await api(`/api/questions?mode=${encodeURIComponent(modeId)}`);
     state.questions = pickRoundQuestions(data.questions);
     if (state.questions.length < TOTAL_QUESTIONS) {
       throw new Error("Pas assez de dilemmes uniques pour lancer une partie.");
     }
+    state.selectedMode = data.mode || modeId;
     state.currentIndex = 0;
     state.score = 0;
     state.correct = 0;
@@ -492,9 +554,10 @@ async function saveScore() {
 
   try {
     ui.saveStatus.textContent = "Enregistrement...";
-    const payload = {
+  const payload = {
       gameId: state.gameId,
       playerId: state.playerId,
+      mode: state.selectedMode,
       pseudo,
       avatar: state.playerAvatar,
       score: state.score,
@@ -604,9 +667,11 @@ async function loadLeaderboard(mode = state.leaderboardMode) {
   ui.globalTab.classList.toggle("active", mode === "global");
   ui.todayTab.classList.toggle("active", mode === "today");
   ui.streakTab.classList.toggle("active", mode === "streak");
+  ui.levelTab.classList.toggle("active", mode === "level");
   ui.globalTab.setAttribute("aria-selected", String(mode === "global"));
   ui.todayTab.setAttribute("aria-selected", String(mode === "today"));
   ui.streakTab.setAttribute("aria-selected", String(mode === "streak"));
+  ui.levelTab.setAttribute("aria-selected", String(mode === "level"));
   ui.leaderboardList.innerHTML = "<p class=\"empty-state\">Chargement...</p>";
   showScreen("leaderboard");
 
@@ -625,15 +690,49 @@ function renderLeaderboard(entries) {
   }
 
   ui.leaderboardList.innerHTML = entries.map((entry, index) => `
-    <li>
+    <li class="${state.leaderboardMode === "level" ? "level-leader-row" : ""}">
       <span class="rank">#${index + 1}</span>
       <span>
         <span class="leader-name">${avatarHtml(entry.avatar, "avatar-mini")} ${levelBadge(entry.level)} ${escapeHtml(entry.pseudo)}</span>
-        <span class="leader-meta">${entry.gamesPlayed} partie${entry.gamesPlayed > 1 ? "s" : ""} - ${entry.totalCorrect}/${entry.totalQuestions} bonnes reponses - Streak x${entry.bestStreak || 0} - ${formatDate(entry.lastPlayedAt)}</span>
+        <span class="leader-meta">${leaderboardMeta(entry)}</span>
+        ${state.leaderboardMode === "level" ? levelMiniProgress(entry) : ""}
       </span>
-      <span class="leader-score">${state.leaderboardMode === "streak" ? `x${entry.bestStreak || 0}` : formatPercent(entry.successRate)}</span>
+      <span class="leader-score">${leaderboardScore(entry)}</span>
     </li>
   `).join("");
+}
+
+function leaderboardMeta(entry) {
+  if (state.leaderboardMode === "level") {
+    return `${entry.xp || 0} XP - ${entry.gamesPlayed} mode${entry.gamesPlayed > 1 ? "s" : ""} termine${entry.gamesPlayed > 1 ? "s" : ""} - ${formatPercent(entry.successRate || 0)} reussite`;
+  }
+
+  return `${entry.gamesPlayed} partie${entry.gamesPlayed > 1 ? "s" : ""} - ${entry.totalCorrect}/${entry.totalQuestions} bonnes reponses - Streak x${entry.bestStreak || 0} - ${formatDate(entry.lastPlayedAt)}`;
+}
+
+function leaderboardScore(entry) {
+  if (state.leaderboardMode === "streak") {
+    return `x${entry.bestStreak || 0}`;
+  }
+
+  if (state.leaderboardMode === "level") {
+    return `Niv. ${entry.level || 1}`;
+  }
+
+  return formatPercent(entry.successRate);
+}
+
+function levelMiniProgress(entry) {
+  const level = Number(entry.level || 1);
+  const xp = Number(entry.xp || 0);
+  const currentLevelXp = (level - 1) * (level - 1) * 120;
+  const nextLevelXp = level * level * 120;
+  const percent = Math.max(0, Math.min(100, ((xp - currentLevelXp) / Math.max(nextLevelXp - currentLevelXp, 1)) * 100));
+  return `
+    <span class="leader-level-track" aria-label="Progression niveau ${level}">
+      <span style="width: ${percent}%"></span>
+    </span>
+  `;
 }
 
 function formatPercent(value) {
@@ -769,7 +868,7 @@ async function openPlayerProfile(pseudo) {
         ${avatarHtml(profile.avatar, "avatar-chip")}
         <div>
           <h2>${escapeHtml(profile.pseudo)}</h2>
-          <p>${levelBadge(profile.level)} Rang global #${profile.rank || "-"}</p>
+          <p>${levelBadge(profile.level)} Rang global #${profile.rank || "-"} - Rang niveau #${profile.levelRank || "-"}</p>
         </div>
       </header>
       <div class="profile-stats">
@@ -794,14 +893,16 @@ ui.achievementsButton.addEventListener("click", loadAchievements);
 ui.howToButton.addEventListener("click", () => showScreen("howTo"));
 ui.nextButton.addEventListener("click", nextQuestion);
 ui.pseudoForm.addEventListener("submit", submitPseudo);
-ui.replayButton.addEventListener("click", askPseudo);
+ui.replayButton.addEventListener("click", showModeSelection);
 ui.showLeaderboardButton.addEventListener("click", () => loadLeaderboard("global"));
 ui.shareButton.addEventListener("click", shareScore);
 ui.globalTab.addEventListener("click", () => loadLeaderboard("global"));
 ui.todayTab.addEventListener("click", () => loadLeaderboard("today"));
 ui.streakTab.addEventListener("click", () => loadLeaderboard("streak"));
+ui.levelTab.addEventListener("click", () => loadLeaderboard("level"));
 ui.refreshLeaderboard.addEventListener("click", () => loadLeaderboard(state.leaderboardMode));
 ui.refreshAchievements.addEventListener("click", loadAchievements);
+ui.refreshModes.addEventListener("click", showModeSelection);
 ui.soundToggle.addEventListener("click", () => setSoundEnabled(!state.soundEnabled));
 ui.avatarGrid.addEventListener("click", (event) => {
   const button = event.target.closest("[data-avatar]");
@@ -809,6 +910,11 @@ ui.avatarGrid.addEventListener("click", (event) => {
   state.playerAvatar = button.dataset.avatar;
   localStorage.setItem("majorite_avatar", state.playerAvatar);
   renderAvatarPicker();
+});
+ui.modeGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-mode]");
+  if (!button || button.disabled) return;
+  startGame(button.dataset.mode);
 });
 ui.chatToggle.addEventListener("click", () => {
   ui.chatBox.classList.toggle("hidden");
