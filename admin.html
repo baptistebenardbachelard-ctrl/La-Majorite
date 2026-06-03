@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - La Majorit&eacute;</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <main class="admin-shell">
+    <section class="admin-panel">
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">Zone protegee</p>
+          <h1>Admin</h1>
+        </div>
+        <a class="admin-link" href="/">Retour au jeu</a>
+      </header>
+
+      <form id="adminLogin" class="admin-login">
+        <label for="adminToken">Token admin</label>
+        <div class="name-row">
+          <input id="adminToken" type="password" autocomplete="current-password" placeholder="ADMIN_TOKEN">
+          <button class="primary-button compact" type="submit">Entrer</button>
+        </div>
+      </form>
+
+      <section id="adminContent" class="admin-content hidden">
+        <div class="admin-actions">
+          <button id="refreshScores" class="secondary-button" type="button">Actualiser</button>
+          <button id="resetScores" class="ghost-button danger-action" type="button">Reset classement</button>
+          <button id="resetAll" class="ghost-button danger-action" type="button">Reset votes + scores</button>
+        </div>
+
+        <p id="adminStatus" class="save-status" aria-live="polite"></p>
+        <div id="scoresList" class="admin-list"></div>
+      </section>
+    </section>
+  </main>
+  <script src="admin.js"></script>
+</body>
+</html>
