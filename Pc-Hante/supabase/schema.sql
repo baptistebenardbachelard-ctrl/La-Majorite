@@ -43,6 +43,16 @@ alter table public.questions enable row level security;
 alter table public.votes enable row level security;
 alter table public.scores enable row level security;
 
+-- RLS Policies for public read access and service role write access
+create policy "Allow read access to questions" on public.questions
+  for select using (true);
+
+create policy "Allow read access to votes" on public.votes
+  for select using (true);
+
+create policy "Allow read access to scores" on public.scores
+  for select using (true);
+
 create or replace view public.leaderboard_global as
 select
   pseudo_key,

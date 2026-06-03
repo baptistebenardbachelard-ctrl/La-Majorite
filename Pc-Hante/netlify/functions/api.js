@@ -2,7 +2,10 @@ const { createClient } = require("@supabase/supabase-js");
 
 const headers = {
   "content-type": "application/json; charset=utf-8",
-  "cache-control": "no-store"
+  "cache-control": "no-store",
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "Content-Type"
 };
 
 function json(statusCode, body) {
@@ -36,10 +39,14 @@ function routePath(event) {
 
 async function readBody(event) {
   if (!event.body) return {};
-  const text = event.isBase64Encoded
-    ? Buffer.from(event.body, "base64").toString("utf8")
-    : event.body;
-  return JSON.parse(text);
+  try {
+    const text = event.isBase64Encoded
+      ? Buffer.from(event.body, "base64").toString("utf8")
+      : event.body;
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error("Corps de la requete invalide : " + error.message);
+  }
 }
 
 async function getQuestions(supabase) {
@@ -119,6 +126,16 @@ async function postScore(supabase, event) {
 }
 
 exports.handler = async (event) => {
+  // Handle CORS preflight requests
+  if (event.httpMethod === "OPTIONS") {
+    return json(204, {});
+  }
+
+  // Health check endpoint
+  if (event.httpMethod === "GET" && routePath(event) === "/health") {
+    return json(200, { status: "ok" });
+  }
+
   try {
     const supabase = getSupabase();
     const path = routePath(event);
