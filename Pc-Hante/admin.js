@@ -32,13 +32,17 @@ async function adminApi(path, options = {}) {
 }
 
 function formatDate(date) {
+  if (!date) return "Date inconnue";
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return "Date inconnue";
+
   return new Intl.DateTimeFormat("fr-FR", {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date(date));
+  }).format(parsedDate);
 }
 
 function renderScores(scores) {
