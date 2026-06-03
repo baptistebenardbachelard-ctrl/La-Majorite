@@ -314,6 +314,16 @@ a.ghost-button {
     rgba(255, 255, 255, 0.105);
 }
 
+.support-button {
+  border-color: rgba(255, 207, 74, 0.72);
+  background:
+    linear-gradient(135deg, rgba(255, 47, 104, 0.26), rgba(255, 207, 74, 0.24)),
+    rgba(255, 255, 255, 0.105);
+  box-shadow:
+    0 16px 34px rgba(255, 47, 104, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
 .primary-button {
   min-height: 56px;
   padding: 0 18px;
@@ -343,7 +353,8 @@ a.ghost-button {
 .secondary-button,
 .ghost-button,
 .chat-toggle,
-.devblog-float {
+.devblog-float,
+.support-float {
   animation: softAppear 360ms ease both;
 }
 
@@ -1629,10 +1640,10 @@ body.answer-bad .game-frame {
   margin: 0 0 10px;
 }
 
-.devblog-float {
+.devblog-float,
+.support-float {
   position: fixed;
   left: 16px;
-  bottom: 66px;
   z-index: 18;
   min-height: 42px;
   display: grid;
@@ -1644,6 +1655,19 @@ body.answer-bad .game-frame {
   color: var(--text);
   text-decoration: none;
   font-weight: 900;
+}
+
+.devblog-float {
+  bottom: 66px;
+}
+
+.support-float {
+  bottom: 116px;
+  border-color: rgba(255, 207, 74, 0.42);
+  background:
+    linear-gradient(135deg, rgba(255, 47, 104, 0.32), rgba(255, 207, 74, 0.22)),
+    rgba(12, 13, 18, 0.92);
+  box-shadow: 0 16px 36px rgba(255, 47, 104, 0.2);
 }
 
 .devblog-posts {
@@ -1853,7 +1877,7 @@ body.answer-bad .game-frame {
   }
 
   .home-actions {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .end-actions {
@@ -2041,11 +2065,19 @@ body.answer-bad .game-frame {
     font-size: 0.82rem;
   }
 
-  .devblog-float {
+  .devblog-float,
+  .support-float {
     left: max(10px, env(safe-area-inset-left));
-    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 48px);
     min-height: 38px;
     font-size: 0.82rem;
+  }
+
+  .devblog-float {
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 48px);
+  }
+
+  .support-float {
+    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 96px);
   }
 
   .site-footer {
