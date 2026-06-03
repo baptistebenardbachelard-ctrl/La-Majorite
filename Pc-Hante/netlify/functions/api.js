@@ -55,7 +55,7 @@ async function getQuestions(supabase) {
     .select("id, question, choice_a, choice_b")
     .order("id", { ascending: true });
 
-  if (error) throw error;
+  if (error) { throw new Error(error.message || JSON.stringify(error)); }
 
   return json(200, {
     questions: data.map((question) => ({
@@ -76,7 +76,7 @@ async function getLeaderboard(supabase, event) {
     .select("pseudo, games_played, total_score, total_correct, total_questions, success_rate, average_score, best_game_percent, last_played_at")
     .limit(50);
 
-  if (error) throw error;
+  if (error) { throw new Error(error.message || JSON.stringify(error)); }
 
   return json(200, {
     entries: data.map((entry) => ({
@@ -141,23 +141,23 @@ exports.handler = async (event) => {
     const path = routePath(event);
 
     if (event.httpMethod === "GET" && path === "/questions") {
-      return getQuestions(supabase);
+      return await getQuestions(supabase);
     }
 
     if (event.httpMethod === "GET" && path === "/leaderboard") {
-      return getLeaderboard(supabase, event);
+      return await getLeaderboard(supabase, event);
     }
 
     if (event.httpMethod === "POST" && path === "/vote") {
-      return postVote(supabase, event);
+      return await postVote(supabase, event);
     }
 
     if (event.httpMethod === "POST" && path === "/scores") {
-      return postScore(supabase, event);
+      return await postScore(supabase, event);
     }
 
     return json(404, { error: "Route API introuvable." });
   } catch (error) {
-    return json(500, { error: error.message || "Erreur serveur." });
+    return json(500, { error: error.message || JSON.stringify(error) || "Erreur serveur." });
   }
 };
