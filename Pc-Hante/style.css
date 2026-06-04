@@ -4040,3 +4040,77 @@ body::after {
     min-width: 0;
   }
 }
+
+/* Correctif cartes de reponse apres refonte du menu. */
+.game-frame {
+  align-content: start;
+}
+
+.choices {
+  align-items: stretch;
+}
+
+.choice-button {
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: center;
+  min-height: clamp(104px, 14svh, 138px);
+  padding: 16px;
+}
+
+.choice-label {
+  align-self: center;
+}
+
+.choice-text {
+  align-self: center;
+  max-width: 100%;
+  padding-right: 8px;
+  overflow-wrap: anywhere;
+}
+
+.choice-button.revealed {
+  min-height: clamp(126px, 16svh, 160px);
+}
+
+.result-percent {
+  justify-self: end;
+}
+
+.choice-button:not(.revealed) .result-percent,
+.choice-button:not(.revealed) .result-tag {
+  display: none;
+}
+
+.result-tag {
+  grid-column: 2 / 4;
+}
+
+@media (min-width: 760px) {
+  .choice-button {
+    min-height: clamp(118px, 16svh, 154px);
+  }
+}
+
+@media (max-width: 560px) {
+  .choices {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-button {
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    min-height: 92px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .choice-button.revealed {
+    min-height: 118px;
+  }
+
+  .choice-label {
+    width: 28px;
+    height: 28px;
+  }
+}
