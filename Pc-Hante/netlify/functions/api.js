@@ -261,6 +261,27 @@ async function registerPlayer(event) {
   return json(200, data);
 }
 
+async function getPresence(event) {
+  if (event.httpMethod === "POST") {
+    const body = await readBody(event);
+    const pseudo = String(body.pseudo || "").trim().slice(0, 18);
+    if (pseudo && !hasForbiddenWord(pseudo)) {
+      await supabaseRpc("register_player", {
+        p_player_id: String(body.playerId || ""),
+        p_pseudo: pseudo,
+        p_avatar: String(body.avatar || "avatar-1")
+      });
+    }
+  }
+
+  const since = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  const data = await supabaseFetch(
+    `/players?select=id&last_seen_at=gte.${encodeURIComponent(since)}&limit=1000`
+  );
+
+  return json(200, { online: data.length });
+}
+
 async function getChat(event) {
   const limit = Math.min(Number(event.queryStringParameters?.limit || 40), 80);
   const data = await supabaseFetch(
@@ -336,6 +357,39 @@ async function reportChatMessage(event) {
   });
 
   return json(200, { message: data[0] });
+}
+
+async function postFeedback(event) {
+  const body = await readBody(event);
+  const playerId = String(body.playerId || "").trim();
+  const pseudo = String(body.pseudo || "").trim().slice(0, 18);
+  const avatar = String(body.avatar || "avatar-1").trim().slice(0, 24);
+  const message = String(body.message || "").trim().slice(0, 1200);
+
+  if (message.length < 3) {
+    return json(400, { error: "Avis trop court." });
+  }
+
+  if (hasForbiddenWord(pseudo)) {
+    return json(400, { error: "Ce pseudo contient un mot interdit." });
+  }
+
+  if (hasForbiddenWord(message)) {
+    return json(400, { error: "Avis bloque : ce mot est interdit." });
+  }
+
+  const data = await supabaseFetch("/feedback_messages", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      player_id: playerId || null,
+      pseudo: pseudo || null,
+      avatar,
+      message
+    })
+  });
+
+  return json(201, { feedback: data[0] });
 }
 
 async function getPlayerProfile(event) {
@@ -431,13 +485,14 @@ async function adminScores(event) {
 
 async function adminStats(event) {
   requireAdmin(event);
-  const [players, scores, votes, questions, chat, reports, blocked] = await Promise.all([
+  const [players, scores, votes, questions, chat, reports, feedback, blocked] = await Promise.all([
     supabaseFetch("/players?select=id,pseudo", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/scores?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/votes?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/questions?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/chat_messages?select=id", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/chat_messages?select=id&reported=eq.true", { headers: { Prefer: "count=exact" } }),
+    supabaseFetch("/feedback_messages?select=id&status=eq.new", { headers: { Prefer: "count=exact" } }),
     supabaseFetch("/blocked_pseudos?select=pseudo_key,pseudo,reason,created_at&order=created_at.desc")
   ]);
   return json(200, {
@@ -447,6 +502,7 @@ async function adminStats(event) {
     questions: questions.length,
     chatMessages: chat.length,
     reports: reports.length,
+    feedback: feedback.length,
     blocked
   });
 }
@@ -464,6 +520,42 @@ async function adminReports(event) {
     "/chat_messages?select=id,pseudo,avatar,player_level,message,report_reason,reported_at,created_at&reported=eq.true&order=reported_at.desc&limit=100"
   );
   return json(200, { reports: data });
+}
+
+async function adminFeedback(event) {
+  requireAdmin(event);
+  const data = await supabaseFetch(
+    "/feedback_messages?select=id,player_id,pseudo,avatar,message,status,created_at,handled_at&order=created_at.desc&limit=100"
+  );
+  return json(200, { feedback: data });
+}
+
+async function adminMarkFeedback(event) {
+  requireAdmin(event);
+  const body = await readBody(event);
+  const id = String(body.id || "");
+  const done = Boolean(body.done);
+  if (!id) return json(400, { error: "Avis introuvable." });
+
+  const data = await supabaseFetch(`/feedback_messages?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      status: done ? "done" : "new",
+      handled_at: done ? new Date().toISOString() : null
+    })
+  });
+
+  return json(200, { feedback: data[0] });
+}
+
+async function adminDeleteFeedback(event) {
+  requireAdmin(event);
+  const body = await readBody(event);
+  const id = String(body.id || "");
+  if (!id) return json(400, { error: "Avis introuvable." });
+  await supabaseFetch(`/feedback_messages?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+  return json(200, { ok: true });
 }
 
 async function adminDeleteMessage(event) {
@@ -675,6 +767,10 @@ exports.handler = async (event) => {
       return getPlayerProfile(event);
     }
 
+    if ((event.httpMethod === "GET" || event.httpMethod === "POST") && path === "/presence") {
+      return getPresence(event);
+    }
+
     if (event.httpMethod === "GET" && path === "/chat") {
       return getChat(event);
     }
@@ -685,6 +781,10 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "POST" && path === "/chat/report") {
       return reportChatMessage(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/feedback") {
+      return postFeedback(event);
     }
 
     if (event.httpMethod === "GET" && path === "/admin/scores") {
@@ -701,6 +801,10 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "GET" && path === "/admin/reports") {
       return adminReports(event);
+    }
+
+    if (event.httpMethod === "GET" && path === "/admin/feedback") {
+      return adminFeedback(event);
     }
 
     if (event.httpMethod === "POST" && path === "/admin/delete-score") {
@@ -737,6 +841,14 @@ exports.handler = async (event) => {
 
     if (event.httpMethod === "POST" && path === "/admin/clear-report") {
       return adminClearReport(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/mark-feedback") {
+      return adminMarkFeedback(event);
+    }
+
+    if (event.httpMethod === "POST" && path === "/admin/delete-feedback") {
+      return adminDeleteFeedback(event);
     }
 
     if (event.httpMethod === "POST" && path === "/admin/devblog") {

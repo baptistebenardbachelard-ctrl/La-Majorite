@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img" aria-label="burger">
+  <defs><linearGradient id="bg" x1="12" y1="8" x2="68" y2="74" gradientUnits="userSpaceOnUse"><stop stop-color="#0b1220"/><stop offset="1" stop-color="#1f2937"/></linearGradient></defs>
+  <rect width="80" height="80" rx="24" fill="url(#bg)"/>
+  <circle cx="64" cy="16" r="10" fill="#d97706" opacity=".18"/>
+  <circle cx="17" cy="65" r="13" fill="#fffbeb" opacity=".14"/>
+  
+  
+  <path d="M22 35q4-16 18-16t18 16z" fill="#f59e0b"/><rect x="20" y="36" width="40" height="8" rx="3" fill="#854d0e"/><rect x="22" y="45" width="36" height="6" rx="3" fill="#22c55e"/><rect x="22" y="52" width="36" height="8" rx="4" fill="#f59e0b"/><circle cx="31" cy="39" r="3.5" fill="#071018"/><circle cx="49" cy="39" r="3.5" fill="#071018"/><path d="M34 51q6 6 12 0" fill="none" stroke="#071018" stroke-width="3" stroke-linecap="round"/>
+</svg>

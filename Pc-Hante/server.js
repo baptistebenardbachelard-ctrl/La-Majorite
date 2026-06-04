@@ -12,12 +12,14 @@ const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "data");
 const QUESTIONS_FILE = path.join(DATA_DIR, "questions.json");
 const SCORES_FILE = path.join(DATA_DIR, "scores.json");
 const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
+const PRESENCE = new Map();
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml; charset=utf-8",
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -644,6 +646,22 @@ async function handleApi(request, response, url) {
     if (request.method === "GET" && url.pathname === "/api/leaderboard") {
       const mode = url.searchParams.get("mode") === "today" ? "today" : "global";
       sendJson(response, 200, { entries: aggregateScores(mode).slice(0, 50) });
+      return;
+    }
+
+    if ((request.method === "GET" || request.method === "POST") && url.pathname === "/api/presence") {
+      const now = Date.now();
+      if (request.method === "POST") {
+        const body = await parseBody(request);
+        const key = normalizePseudo(body.pseudo) || String(body.playerId || "local");
+        PRESENCE.set(key, now);
+      }
+
+      for (const [key, seenAt] of PRESENCE.entries()) {
+        if (now - seenAt > 2 * 60 * 1000) PRESENCE.delete(key);
+      }
+
+      sendJson(response, 200, { online: PRESENCE.size });
       return;
     }
 

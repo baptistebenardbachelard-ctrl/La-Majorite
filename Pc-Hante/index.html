@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>La Majorit&eacute;</title>
-  <link rel="icon" type="image/png" href="assets/logo-majorite.png">
-  <link rel="apple-touch-icon" href="assets/logo-majorite.png">
+  <link rel="icon" type="image/svg+xml" href="assets/logo-majorite.svg">
+  <link rel="apple-touch-icon" href="assets/logo-majorite.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
@@ -21,32 +21,67 @@
 <body>
   <main class="app-shell">
     <section id="homeScreen" class="screen active" aria-labelledby="homeTitle">
-      <div class="story-frame home-frame">
-        <div class="brand-row">
-          <img class="brand-logo" src="assets/logo-majorite.png" alt="Logo La Majorit&eacute;">
-          <span>La Majorit&eacute;</span>
+      <div class="story-frame home-frame home-lobby">
+        <div class="lobby-dilemmas" aria-hidden="true">
+          <article class="lobby-dilemma-card"><span>Pizza</span><small>vs</small><span>Burger</span></article>
+          <article class="lobby-dilemma-card"><span>Invisible</span><small>vs</small><span>Lire les pensees</span></article>
+          <article class="lobby-dilemma-card"><span>TikTok</span><small>vs</small><span>YouTube</span></article>
+          <article class="lobby-dilemma-card"><span>Films</span><small>vs</small><span>Series</span></article>
+          <article class="lobby-dilemma-card"><span>Chaud</span><small>vs</small><span>Froid</span></article>
+          <article class="lobby-dilemma-card"><span>10M EUR</span><small>vs</small><span>Internet</span></article>
         </div>
-        <div class="home-copy">
-          <img class="hero-logo" src="assets/logo-majorite.png" alt="Logo La Majorit&eacute;">
-          <p class="eyebrow">Devine le vote collectif</p>
-          <h1 id="homeTitle">Pense comme la majorit&eacute;.</h1>
-          <p class="lead">Choisis un mode, joue 25 dilemmes, decouvre les vrais pourcentages et marque des points.</p>
-        </div>
-        <aside class="home-top-card" aria-label="Top du jour">
-          <div>
-            <span class="mini-label">Top du jour</span>
-            <strong id="homeTopName">Chargement...</strong>
+
+        <header class="lobby-top">
+          <a class="lobby-logo" href="/" aria-label="Accueil La Majorit&eacute;">
+            <img src="assets/logo-majorite.svg" alt="Logo La Majorit&eacute;">
+            <span>La Majorit&eacute;</span>
+          </a>
+          <aside id="homeProfileCard" class="home-profile-card hidden" aria-live="polite"></aside>
+          <span class="lobby-version">Beta 1.1.1</span>
+        </header>
+
+        <section class="lobby-now" aria-labelledby="homeTitle">
+          <div class="lobby-copy">
+            <p class="eyebrow">Nouveau round</p>
+            <h1 id="homeTitle">La majorit&eacute; pense comme toi ?</h1>
+            <p class="lead">25 dilemmes, de vrais pourcentages, un score qui depend de la majorite.</p>
           </div>
-          <span id="homeTopScore">--</span>
+        </section>
+
+        <button id="playButton" class="lobby-play" type="button">
+          <span>Jouer maintenant</span>
+          <small>Choisir un mode</small>
+        </button>
+
+        <aside class="lobby-top-player lobby-top-three" aria-label="Top 3 du jour">
+          <span class="mini-label">Top du jour</span>
+          <ol id="homeTopList" class="home-top-list">
+            <li>Chargement...</li>
+          </ol>
         </aside>
-        <div class="home-actions">
-          <button id="playButton" class="primary-button" type="button">Jouer</button>
-          <button id="leaderboardButton" class="secondary-button" type="button">Classement</button>
-          <button id="achievementsButton" class="secondary-button" type="button">Succes</button>
-          <button id="howToButton" class="ghost-button" type="button">Comment jouer</button>
-          <a class="secondary-button discord-button" href="https://discord.gg/6pBdYZbzGq" target="_blank" rel="noopener noreferrer">Discord</a>
-          <a class="secondary-button support-button" href="https://fr.tipeee.com/la-majorite/" target="_blank" rel="noopener noreferrer">Soutenir</a>
-        </div>
+
+        <nav class="lobby-grid" aria-label="Menu principal">
+          <button id="leaderboardButton" class="lobby-tile" type="button">
+            <span><img src="assets/menu-top.svg" alt="" aria-hidden="true"></span>
+            <strong>Classement</strong>
+          </button>
+          <button id="achievementsButton" class="lobby-tile" type="button">
+            <span><img src="assets/menu-badges.svg" alt="" aria-hidden="true"></span>
+            <strong>Succes</strong>
+          </button>
+          <button id="howToButton" class="lobby-tile" type="button">
+            <span><img src="assets/menu-rules.svg" alt="" aria-hidden="true"></span>
+            <strong>Comment jouer</strong>
+          </button>
+          <a class="lobby-tile lobby-discord" href="https://discord.gg/6pBdYZbzGq" target="_blank" rel="noopener noreferrer">
+            <span><img src="assets/menu-discord.svg" alt="" aria-hidden="true"></span>
+            <strong>Discord</strong>
+          </a>
+          <button id="feedbackButton" class="lobby-tile lobby-feedback" type="button">
+            <span><img src="assets/menu-feedback.svg" alt="" aria-hidden="true"></span>
+            <strong>Avis</strong>
+          </button>
+        </nav>
       </div>
     </section>
 
@@ -123,6 +158,7 @@
           <button id="refreshModes" class="icon-button" type="button" aria-label="Actualiser">R</button>
         </header>
         <p id="modeStatus" class="save-status">Chaque mode contient 25 questions. Une fois termine, il est verrouille pour ton pseudo.</p>
+        <div id="playerProgressCard" class="player-progress-card hidden" aria-live="polite"></div>
         <div id="modeGrid" class="mode-grid"></div>
       </div>
     </section>
@@ -196,9 +232,13 @@
         <p class="eyebrow">Regles</p>
         <h2 id="howToTitle">Choisis la majorit&eacute;, pas ton coeur.</h2>
         <div class="rules">
-          <p>Chaque partie contient 25 dilemmes. Tu votes A ou B, puis les vrais votes sont enregistres et les pourcentages s'affichent.</p>
-          <p>Majorit&eacute; trouvee : 1 point. Majorit&eacute; tres serree entre 51/49 et 55/45 : 2 points.</p>
-          <p>Pas de compte, juste un pseudo avant la partie pour entrer dans le classement global et le top du jour.</p>
+          <p>Le but n'est pas de choisir ce que tu preferes, mais de deviner ce que la majorite des joueurs va voter.</p>
+          <p>Tu choisis un mode, puis tu joues 25 dilemmes. A chaque question, tu votes A ou B avant de voir les resultats.</p>
+          <p>Apres ton vote, ton choix est enregistre, les vrais pourcentages sont mis a jour, puis tu vois si tu as suivi la majorite.</p>
+          <p>Majorite trouvee : 1 point. Question tres serree entre 51/49 et 55/45 : 2 points.</p>
+          <p>Chaque mode termine est verrouille pour ton pseudo. Plus tu joues, plus ton classement global devient difficile a corriger.</p>
+          <p>Ton niveau monte avec l'XP gagnee a la fin des parties. Tu peux suivre ta progression dans ton menu de modes.</p>
+          <p>Pas besoin de compte : ton pseudo et ton avatar suffisent pour les classements, le chat et les succes.</p>
         </div>
         <button class="primary-button" data-nav="play" type="button">Commencer</button>
       </div>
@@ -221,7 +261,10 @@
   </footer>
 
   <section id="chatPanel" class="chat-panel" aria-label="Chat du jeu">
-    <button id="chatToggle" class="chat-toggle" type="button">Chat</button>
+    <button id="chatToggle" class="chat-toggle" type="button">
+      <span>Chat</span>
+      <span id="onlineCount" class="online-badge" aria-label="Joueurs en ligne">--</span>
+    </button>
     <div id="chatBox" class="chat-box hidden">
       <header>
         <strong>Chat</strong>
@@ -240,6 +283,21 @@
     <div class="profile-card">
       <button id="profileClose" class="icon-button" type="button" aria-label="Fermer">x</button>
       <div id="profileContent"></div>
+    </div>
+  </section>
+
+  <section id="feedbackModal" class="profile-modal hidden" aria-label="Donner son avis">
+    <div class="profile-card feedback-card">
+      <button id="feedbackClose" class="icon-button" type="button" aria-label="Fermer">x</button>
+      <p class="eyebrow">Ton avis</p>
+      <h2>Ameliore La Majorite</h2>
+      <p class="feedback-help">Ecris ton avis, un bug ou une idee. Ton message apparaitra directement dans le panel admin.</p>
+      <textarea id="feedbackText" class="feedback-textarea" maxlength="1200" placeholder="Ton avis sur le jeu..."></textarea>
+      <div class="feedback-actions">
+        <button id="feedbackSend" class="primary-button compact" type="button">Envoyer mon avis</button>
+        <a class="ghost-button compact" href="https://discord.gg/6pBdYZbzGq" target="_blank" rel="noopener noreferrer">Discord</a>
+      </div>
+      <p id="feedbackStatus" class="save-status" aria-live="polite"></p>
     </div>
   </section>
 

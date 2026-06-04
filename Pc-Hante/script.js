@@ -1,13 +1,55 @@
 const TOTAL_QUESTIONS = 25;
 const AVATARS = [
-  { id: "avatar-1", name: "Nova", face: "face-nova", color: "linear-gradient(135deg, #ff2f68, #ffcf4a)" },
-  { id: "avatar-2", name: "Pixel", face: "face-pixel", color: "linear-gradient(135deg, #12d7f2, #8b5cff)" },
-  { id: "avatar-3", name: "Bulle", face: "face-bulle", color: "linear-gradient(135deg, #c5ff45, #12d7f2)" },
-  { id: "avatar-4", name: "Flash", face: "face-flash", color: "linear-gradient(135deg, #ff8a3d, #ff2f68)" },
-  { id: "avatar-5", name: "Moka", face: "face-moka", color: "linear-gradient(135deg, #ffffff, #8b5cff)" },
-  { id: "avatar-6", name: "Comete", face: "face-comete", color: "linear-gradient(135deg, #ffcf4a, #12d7f2)" },
-  { id: "avatar-7", name: "Luna", face: "face-luna", color: "linear-gradient(135deg, #8b5cff, #ff2f68)" },
-  { id: "avatar-8", name: "Tempo", face: "face-tempo", color: "linear-gradient(135deg, #12d7f2, #c5ff45)" }
+  { id: "avatar-1", name: "Renard", src: "assets/avatars/avatar-1.svg" },
+  { id: "avatar-2", name: "Panda", src: "assets/avatars/avatar-2.svg" },
+  { id: "avatar-3", name: "Chat", src: "assets/avatars/avatar-3.svg" },
+  { id: "avatar-4", name: "Chien", src: "assets/avatars/avatar-4.svg" },
+  { id: "avatar-5", name: "Lapin", src: "assets/avatars/avatar-5.svg" },
+  { id: "avatar-6", name: "Koala", src: "assets/avatars/avatar-6.svg" },
+  { id: "avatar-7", name: "Tigre", src: "assets/avatars/avatar-7.svg" },
+  { id: "avatar-8", name: "Ours", src: "assets/avatars/avatar-8.svg" },
+  { id: "avatar-9", name: "Pingouin", src: "assets/avatars/avatar-9.svg" },
+  { id: "avatar-10", name: "Grenouille", src: "assets/avatars/avatar-10.svg" },
+  { id: "avatar-11", name: "Lion", src: "assets/avatars/avatar-11.svg" },
+  { id: "avatar-12", name: "Singe", src: "assets/avatars/avatar-12.svg" },
+  { id: "avatar-13", name: "Cochon", src: "assets/avatars/avatar-13.svg" },
+  { id: "avatar-14", name: "Licorne", src: "assets/avatars/avatar-14.svg" },
+  { id: "avatar-15", name: "Dragon", src: "assets/avatars/avatar-15.svg" },
+  { id: "avatar-16", name: "Requin", src: "assets/avatars/avatar-16.svg" },
+  { id: "avatar-17", name: "Poulpe", src: "assets/avatars/avatar-17.svg" },
+  { id: "avatar-18", name: "Abeille", src: "assets/avatars/avatar-18.svg" },
+  { id: "avatar-19", name: "Papillon", src: "assets/avatars/avatar-19.svg" },
+  { id: "avatar-20", name: "Tortue", src: "assets/avatars/avatar-20.svg" },
+  { id: "avatar-21", name: "Astronaute", src: "assets/avatars/avatar-21.svg" },
+  { id: "avatar-22", name: "Ninja", src: "assets/avatars/avatar-22.svg" },
+  { id: "avatar-23", name: "Pirate", src: "assets/avatars/avatar-23.svg" },
+  { id: "avatar-24", name: "Robot", src: "assets/avatars/avatar-24.svg" },
+  { id: "avatar-25", name: "Sorciere", src: "assets/avatars/avatar-25.svg" },
+  { id: "avatar-26", name: "Mage", src: "assets/avatars/avatar-26.svg" },
+  { id: "avatar-27", name: "Chevalier", src: "assets/avatars/avatar-27.svg" },
+  { id: "avatar-28", name: "Princesse", src: "assets/avatars/avatar-28.svg" },
+  { id: "avatar-29", name: "Roi", src: "assets/avatars/avatar-29.svg" },
+  { id: "avatar-30", name: "Detective", src: "assets/avatars/avatar-30.svg" },
+  { id: "avatar-31", name: "Skateur", src: "assets/avatars/avatar-31.svg" },
+  { id: "avatar-32", name: "Gamer", src: "assets/avatars/avatar-32.svg" },
+  { id: "avatar-33", name: "DJ", src: "assets/avatars/avatar-33.svg" },
+  { id: "avatar-34", name: "Scientifique", src: "assets/avatars/avatar-34.svg" },
+  { id: "avatar-35", name: "Chef", src: "assets/avatars/avatar-35.svg" },
+  { id: "avatar-36", name: "Fantome", src: "assets/avatars/avatar-36.svg" },
+  { id: "avatar-37", name: "Vampire", src: "assets/avatars/avatar-37.svg" },
+  { id: "avatar-38", name: "Alien", src: "assets/avatars/avatar-38.svg" },
+  { id: "avatar-39", name: "Zombie", src: "assets/avatars/avatar-39.svg" },
+  { id: "avatar-40", name: "Clown", src: "assets/avatars/avatar-40.svg" },
+  { id: "avatar-41", name: "Nuage", src: "assets/avatars/avatar-41.svg" },
+  { id: "avatar-42", name: "Soleil", src: "assets/avatars/avatar-42.svg" },
+  { id: "avatar-43", name: "Lune", src: "assets/avatars/avatar-43.svg" },
+  { id: "avatar-44", name: "Flamme", src: "assets/avatars/avatar-44.svg" },
+  { id: "avatar-45", name: "Glace", src: "assets/avatars/avatar-45.svg" },
+  { id: "avatar-46", name: "Pizza", src: "assets/avatars/avatar-46.svg" },
+  { id: "avatar-47", name: "Burger", src: "assets/avatars/avatar-47.svg" },
+  { id: "avatar-48", name: "Sushi", src: "assets/avatars/avatar-48.svg" },
+  { id: "avatar-49", name: "Cookie", src: "assets/avatars/avatar-49.svg" },
+  { id: "avatar-50", name: "Bonbon", src: "assets/avatars/avatar-50.svg" }
 ];
 
 const ACHIEVEMENTS = [
@@ -43,6 +85,7 @@ const ui = {
   leaderboardButton: document.getElementById("leaderboardButton"),
   achievementsButton: document.getElementById("achievementsButton"),
   howToButton: document.getElementById("howToButton"),
+  feedbackButton: document.getElementById("feedbackButton"),
   questionCounter: document.getElementById("questionCounter"),
   progressBar: document.getElementById("progressBar"),
   liveScore: document.getElementById("liveScore"),
@@ -64,6 +107,7 @@ const ui = {
   avatarGrid: document.getElementById("avatarGrid"),
   modeGrid: document.getElementById("modeGrid"),
   modeStatus: document.getElementById("modeStatus"),
+  playerProgressCard: document.getElementById("playerProgressCard"),
   refreshModes: document.getElementById("refreshModes"),
   saveStatus: document.getElementById("saveStatus"),
   badgeList: document.getElementById("badgeList"),
@@ -79,11 +123,12 @@ const ui = {
   achievementsList: document.getElementById("achievementsList"),
   achievementsStatus: document.getElementById("achievementsStatus"),
   refreshAchievements: document.getElementById("refreshAchievements"),
-  homeTopName: document.getElementById("homeTopName"),
-  homeTopScore: document.getElementById("homeTopScore"),
+  homeTopList: document.getElementById("homeTopList"),
+  homeProfileCard: document.getElementById("homeProfileCard"),
   soundToggle: document.getElementById("soundToggle"),
   chatPanel: document.getElementById("chatPanel"),
   chatToggle: document.getElementById("chatToggle"),
+  onlineCount: document.getElementById("onlineCount"),
   chatBox: document.getElementById("chatBox"),
   chatClose: document.getElementById("chatClose"),
   chatMessages: document.getElementById("chatMessages"),
@@ -93,6 +138,11 @@ const ui = {
   profileModal: document.getElementById("profileModal"),
   profileClose: document.getElementById("profileClose"),
   profileContent: document.getElementById("profileContent"),
+  feedbackModal: document.getElementById("feedbackModal"),
+  feedbackClose: document.getElementById("feedbackClose"),
+  feedbackText: document.getElementById("feedbackText"),
+  feedbackSend: document.getElementById("feedbackSend"),
+  feedbackStatus: document.getElementById("feedbackStatus"),
   toast: document.getElementById("toast")
 };
 
@@ -111,12 +161,17 @@ const state = {
   playerAvatar: localStorage.getItem("majorite_avatar") || "avatar-1",
   selectedMode: "",
   modes: [],
+  playerProfile: null,
   saved: false,
   rank: null,
   leaderboardMode: "global",
   soundEnabled: localStorage.getItem("majorite_sound") !== "off",
   chatLoaded: false
 };
+
+const floatingDilemmas = [];
+let floatingDilemmasFrame = null;
+let floatingDilemmasLastTime = 0;
 
 function createGameId() {
   if (crypto.randomUUID) {
@@ -158,6 +213,68 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => ui.toast.classList.remove("visible"), 2600);
 }
 
+function setupFloatingDilemmas() {
+  const cards = [...document.querySelectorAll(".lobby-dilemma-card")];
+  if (!cards.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  floatingDilemmas.length = 0;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  cards.forEach((card, index) => {
+    const rect = card.getBoundingClientRect();
+    const cardWidth = rect.width || 160;
+    const cardHeight = rect.height || 76;
+    const speed = 0.012 + (index % 3) * 0.004;
+    const directionX = index % 2 === 0 ? 1 : -1;
+    const directionY = index % 3 === 0 ? 1 : -1;
+
+    floatingDilemmas.push({
+      card,
+      x: ((index * 211) % Math.max(width - cardWidth, 1)),
+      y: 72 + ((index * 137) % Math.max(height - cardHeight - 120, 1)),
+      width: cardWidth,
+      height: cardHeight,
+      vx: speed * directionX,
+      vy: (speed * 0.72) * directionY,
+      rotation: (index % 2 === 0 ? -1 : 1) * (3 + index),
+      drift: index * 0.7
+    });
+  });
+
+  if (!floatingDilemmasFrame) {
+    floatingDilemmasLastTime = performance.now();
+    floatingDilemmasFrame = requestAnimationFrame(animateFloatingDilemmas);
+  }
+}
+
+function animateFloatingDilemmas(time) {
+  const delta = Math.min(time - floatingDilemmasLastTime, 40);
+  floatingDilemmasLastTime = time;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+
+  floatingDilemmas.forEach((item) => {
+    item.x += item.vx * delta;
+    item.y += item.vy * delta;
+
+    if (item.x <= 0 || item.x + item.width >= width) {
+      item.vx *= -1;
+      item.x = Math.max(0, Math.min(item.x, width - item.width));
+    }
+
+    if (item.y <= 0 || item.y + item.height >= height) {
+      item.vy *= -1;
+      item.y = Math.max(0, Math.min(item.y, height - item.height));
+    }
+
+    const bob = Math.sin((time / 1800) + item.drift) * 4;
+    item.card.style.transform = `translate3d(${item.x}px, ${item.y + bob}px, 0) rotate(${item.rotation}deg)`;
+  });
+
+  floatingDilemmasFrame = requestAnimationFrame(animateFloatingDilemmas);
+}
+
 function avatarFor(id) {
   return AVATARS.find((avatar) => avatar.id === id) || AVATARS[0];
 }
@@ -165,13 +282,8 @@ function avatarFor(id) {
 function avatarHtml(id, className = "avatar-chip") {
   const avatar = avatarFor(id);
   return `
-    <span class="${className} avatar-face ${avatar.face}" style="--avatar-bg: ${avatar.color}" aria-hidden="true">
-      <span class="avatar-ear left"></span>
-      <span class="avatar-ear right"></span>
-      <span class="avatar-hair"></span>
-      <span class="avatar-eye left"></span>
-      <span class="avatar-eye right"></span>
-      <span class="avatar-mouth"></span>
+    <span class="${className} avatar-image" aria-hidden="true">
+      <img src="${avatar.src}" alt="" loading="lazy" decoding="async">
     </span>
   `;
 }
@@ -215,20 +327,88 @@ function playTone(success) {
 }
 
 async function loadHomeTop() {
-  if (!ui.homeTopName || !ui.homeTopScore) return;
+  if (!ui.homeTopList) return;
   try {
     const data = await api("/api/leaderboard?mode=today");
-    const leader = data.entries[0];
-    if (!leader) {
-      ui.homeTopName.textContent = "Aucun joueur";
-      ui.homeTopScore.textContent = "--";
+    const leaders = (data.entries || []).slice(0, 3);
+    if (!leaders.length) {
+      ui.homeTopList.innerHTML = "<li>Aucun joueur aujourd'hui</li>";
       return;
     }
-    ui.homeTopName.innerHTML = `${avatarHtml(leader.avatar, "avatar-mini")} ${escapeHtml(leader.pseudo)}`;
-    ui.homeTopScore.textContent = formatPercent(leader.successRate);
+    ui.homeTopList.innerHTML = leaders.map((leader, index) => `
+      <li>
+        <span class="top-rank">#${index + 1}</span>
+        <span class="top-player">${avatarHtml(leader.avatar, "avatar-mini")} ${escapeHtml(leader.pseudo)}</span>
+        <strong>${formatPercent(leader.successRate)}</strong>
+      </li>
+    `).join("");
   } catch {
-    ui.homeTopName.textContent = "Top indisponible";
-    ui.homeTopScore.textContent = "--";
+    ui.homeTopList.innerHTML = "<li>Top indisponible</li>";
+  }
+}
+
+async function loadPresence(touchPlayer = false) {
+  if (!ui.onlineCount) return;
+
+  const pseudo = state.playerPseudo || localStorage.getItem("majorite_pseudo") || "";
+  const shouldTouch = touchPlayer && pseudo;
+
+  try {
+    const data = await api("/api/presence", shouldTouch
+      ? {
+          method: "POST",
+          body: JSON.stringify({
+            playerId: state.playerId || getPlayerId(),
+            pseudo,
+            avatar: state.playerAvatar || localStorage.getItem("majorite_avatar") || "avatar-1"
+          })
+        }
+      : undefined);
+    ui.onlineCount.textContent = Number(data.online || 0);
+  } catch {
+    ui.onlineCount.textContent = "--";
+  }
+}
+
+async function loadHomeProfile() {
+  if (!ui.homeProfileCard) return;
+
+  const pseudo = localStorage.getItem("majorite_pseudo") || state.playerPseudo || "";
+  const avatar = localStorage.getItem("majorite_avatar") || state.playerAvatar;
+  if (!pseudo) {
+    ui.homeProfileCard.classList.add("hidden");
+    ui.homeProfileCard.innerHTML = "";
+    ui.homeProfileCard.removeAttribute("data-profile");
+    ui.homeProfileCard.removeAttribute("role");
+    ui.homeProfileCard.removeAttribute("tabindex");
+    return;
+  }
+
+  ui.homeProfileCard.classList.remove("hidden");
+  ui.homeProfileCard.dataset.profile = pseudo;
+  ui.homeProfileCard.setAttribute("role", "button");
+  ui.homeProfileCard.setAttribute("tabindex", "0");
+  ui.homeProfileCard.innerHTML = `
+    ${avatarHtml(avatar, "avatar-mini")}
+    <div>
+      <strong>${escapeHtml(pseudo)}</strong>
+      <span>Voir mon profil</span>
+    </div>
+  `;
+
+  try {
+    const data = await api(`/api/player?pseudo=${encodeURIComponent(pseudo)}`);
+    const profile = data.profile || {};
+    ui.homeProfileCard.dataset.profile = profile.pseudo || pseudo;
+    ui.homeProfileCard.innerHTML = `
+      ${avatarHtml(profile.avatar || avatar, "avatar-mini")}
+      <div>
+        <strong>${escapeHtml(profile.pseudo || pseudo)} ${levelBadge(profile.level || 1)}</strong>
+        <span>${profile.gamesPlayed || 0} partie(s) - ${profile.xp || 0} XP - rang #${profile.rank || "-"}</span>
+      </div>
+    `;
+  } catch {
+    // Le profil local suffit si l'API n'est pas disponible.
   }
 }
 
@@ -323,6 +503,8 @@ async function submitPseudo(event) {
     localStorage.setItem("majorite_player_id", state.playerId);
     localStorage.setItem("majorite_pseudo", state.playerPseudo);
     localStorage.setItem("majorite_avatar", state.playerAvatar);
+    loadHomeProfile();
+    loadPresence(true);
     showModeSelection();
   } catch (error) {
     ui.pseudoStatus.textContent = error.message;
@@ -337,15 +519,48 @@ async function showModeSelection() {
 
   ui.modeStatus.textContent = "Chargement des modes...";
   ui.modeGrid.innerHTML = "";
+  ui.playerProgressCard.classList.add("hidden");
   showScreen("mode");
 
   try {
-    const data = await api(`/api/modes?playerId=${encodeURIComponent(getPlayerId())}`);
-    state.modes = data.modes || [];
+    const [modesData, profileData] = await Promise.all([
+      api(`/api/modes?playerId=${encodeURIComponent(getPlayerId())}`),
+      api(`/api/player?pseudo=${encodeURIComponent(state.playerPseudo)}`)
+    ]);
+    state.modes = modesData.modes || [];
+    state.playerProfile = profileData.profile || null;
+    renderPlayerMenuProgress();
     renderModes();
   } catch (error) {
     ui.modeStatus.textContent = error.message;
   }
+}
+
+function renderPlayerMenuProgress() {
+  if (!ui.playerProgressCard || !state.playerProfile) return;
+
+  const profile = state.playerProfile;
+  const level = Number(profile.level || 1);
+  const xp = Number(profile.xp || 0);
+  const currentLevelXp = (level - 1) * (level - 1) * 120;
+  const nextLevelXp = level * level * 120;
+  const progress = levelProgressPercent(profile);
+  const remainingXp = Math.max(0, nextLevelXp - xp);
+
+  ui.playerProgressCard.classList.remove("hidden");
+  ui.playerProgressCard.innerHTML = `
+    ${avatarHtml(profile.avatar || state.playerAvatar, "avatar-chip")}
+    <div class="player-progress-content">
+      <div class="player-progress-top">
+        <strong>${escapeHtml(profile.pseudo || state.playerPseudo)}</strong>
+        ${levelBadge(level)}
+      </div>
+      <div class="level-track" aria-label="Progression XP niveau ${level}">
+        <span style="width: ${progress}%"></span>
+      </div>
+      <p>${xp - currentLevelXp}/${nextLevelXp - currentLevelXp} XP du niveau - encore ${remainingXp} XP pour le niveau ${level + 1}</p>
+    </div>
+  `;
 }
 
 function renderModes() {
@@ -887,10 +1102,43 @@ async function openPlayerProfile(pseudo) {
   }
 }
 
+function openFeedbackModal() {
+  ui.feedbackModal.classList.remove("hidden");
+  ui.feedbackStatus.textContent = "";
+  window.setTimeout(() => ui.feedbackText.focus(), 80);
+}
+
+async function sendFeedback() {
+  const message = ui.feedbackText.value.trim();
+  if (!message) {
+    ui.feedbackStatus.textContent = "Ecris ton avis avant de l'envoyer.";
+    return;
+  }
+
+  try {
+    ui.feedbackStatus.textContent = "Envoi de ton avis...";
+    await api("/api/feedback", {
+      method: "POST",
+      body: JSON.stringify({
+        playerId: state.playerId || getPlayerId(),
+        pseudo: state.playerPseudo || localStorage.getItem("majorite_pseudo") || "",
+        avatar: state.playerAvatar,
+        message
+      })
+    });
+    ui.feedbackText.value = "";
+    ui.feedbackStatus.textContent = "Merci ! Ton avis a ete envoye.";
+    showToast("Avis envoye.");
+  } catch (error) {
+    ui.feedbackStatus.textContent = error.message;
+  }
+}
+
 ui.playButton.addEventListener("click", askPseudo);
 ui.leaderboardButton.addEventListener("click", () => loadLeaderboard("global"));
 ui.achievementsButton.addEventListener("click", loadAchievements);
 ui.howToButton.addEventListener("click", () => showScreen("howTo"));
+ui.feedbackButton.addEventListener("click", openFeedbackModal);
 ui.nextButton.addEventListener("click", nextQuestion);
 ui.pseudoForm.addEventListener("submit", submitPseudo);
 ui.replayButton.addEventListener("click", showModeSelection);
@@ -933,9 +1181,24 @@ ui.chatMessages.addEventListener("click", (event) => {
   if (!button) return;
   openPlayerProfile(button.dataset.profile);
 });
+ui.homeProfileCard.addEventListener("click", () => {
+  const pseudo = ui.homeProfileCard.dataset.profile;
+  if (pseudo) openPlayerProfile(pseudo);
+});
+ui.homeProfileCard.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  const pseudo = ui.homeProfileCard.dataset.profile;
+  if (pseudo) openPlayerProfile(pseudo);
+});
 ui.profileClose.addEventListener("click", () => ui.profileModal.classList.add("hidden"));
 ui.profileModal.addEventListener("click", (event) => {
   if (event.target === ui.profileModal) ui.profileModal.classList.add("hidden");
+});
+ui.feedbackClose.addEventListener("click", () => ui.feedbackModal.classList.add("hidden"));
+ui.feedbackSend.addEventListener("click", sendFeedback);
+ui.feedbackModal.addEventListener("click", (event) => {
+  if (event.target === ui.feedbackModal) ui.feedbackModal.classList.add("hidden");
 });
 
 document.querySelectorAll("[data-nav='home']").forEach((button) => {
@@ -948,6 +1211,9 @@ document.querySelectorAll("[data-nav='play']").forEach((button) => {
 
 setSoundEnabled(state.soundEnabled);
 loadHomeTop();
+loadHomeProfile();
+loadPresence(true);
 window.setInterval(() => {
   if (!ui.chatBox.classList.contains("hidden")) loadChat();
 }, 12000);
+window.setInterval(() => loadPresence(true), 45000);

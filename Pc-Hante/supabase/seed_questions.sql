@@ -349,7 +349,7 @@ insert into public.questions (id, category, question, choice_a, choice_b) values
 ('awkward_024', 'awkward', 'Tu dois choisir un fail de message :', 'Autocorrect embarrassant', 'Reponse envoyee trop tard'),
 ('awkward_025', 'awkward', 'Tu dois choisir une honte classique :', 'Marcher dans une porte vitree', 'Serrer une main qui n''etait pas tendue'),
 
-('internet_001', 'internet', 'Tu dois choisir une culture web :', 'Plus jamais memes', 'Plus jamais musique'),
+('internet_001', 'internet', 'Tu dois choisir ce que tu perds en ligne :', 'Plus jamais regarder de memes', 'Plus jamais regarder de videos courtes'),
 ('internet_002', 'internet', 'Tu dois choisir une celebrite digitale :', 'Connu sur TikTok', 'Riche mais inconnu'),
 ('internet_003', 'internet', 'Tu dois choisir une vie en ligne :', '1 million d''abonnes sans amis proches', '5 amis fideles sans abonnes'),
 ('internet_004', 'internet', 'Tu dois choisir une appli a supprimer :', 'Supprimer Instagram', 'Supprimer TikTok'),
@@ -360,7 +360,7 @@ insert into public.questions (id, category, question, choice_a, choice_b) values
 ('internet_009', 'internet', 'Tu dois choisir une communaute :', 'Serveur Discord actif', 'Groupe prive Instagram'),
 ('internet_010', 'internet', 'Tu dois choisir un format long :', 'Podcast', 'Video YouTube de 40 minutes'),
 ('internet_011', 'internet', 'Tu dois choisir une recommandation :', 'Algorithme parfait', 'Abonnements parfaits'),
-('internet_012', 'internet', 'Tu dois choisir un bug :', 'Compte shadowban', 'Commentaires desactives'),
+('internet_012', 'internet', 'Tu dois choisir une limite sur les reseaux :', 'Plus jamais poster de stories', 'Plus jamais ecrire de commentaires'),
 ('internet_013', 'internet', 'Tu dois choisir un mode de vie :', 'Digital detox un mois', 'Internet illimite mais lent'),
 ('internet_014', 'internet', 'Tu dois choisir une reputation web :', 'Etre connu pour une blague', 'Etre connu pour un avis'),
 ('internet_015', 'internet', 'Tu dois choisir une archive :', 'Supprimer tous tes anciens posts', 'Garder tout pour toujours'),

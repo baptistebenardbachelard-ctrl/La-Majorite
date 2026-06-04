@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img" aria-label="pizza">
+  <defs><linearGradient id="bg" x1="12" y1="8" x2="68" y2="74" gradientUnits="userSpaceOnUse"><stop stop-color="#121826"/><stop offset="1" stop-color="#111827"/></linearGradient></defs>
+  <rect width="80" height="80" rx="24" fill="url(#bg)"/>
+  <circle cx="64" cy="16" r="10" fill="#fb923c" opacity=".18"/>
+  <circle cx="17" cy="65" r="13" fill="#fff7ed" opacity=".14"/>
+  
+  
+  <path d="M23 18l36 8-24 36z" fill="#facc15" stroke="#071018" stroke-width="2"/><circle cx="38" cy="32" r="3" fill="#ef4444"/><circle cx="45" cy="42" r="3" fill="#ef4444"/><circle cx="31" cy="39" r="3.5" fill="#071018"/><circle cx="49" cy="39" r="3.5" fill="#071018"/><path d="M34 51q6 6 12 0" fill="none" stroke="#071018" stroke-width="3" stroke-linecap="round"/>
+</svg>

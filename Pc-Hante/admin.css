@@ -81,7 +81,7 @@
 
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 10px;
 }
 
@@ -175,6 +175,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.feedback-row.done {
+  opacity: 0.62;
+}
+
+.feedback-row.done strong {
+  color: var(--lime);
 }
 
 .small-actions {

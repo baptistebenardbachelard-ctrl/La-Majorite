@@ -106,6 +106,18 @@ create table if not exists public.devblog_posts (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.feedback_messages (
+  id uuid primary key default gen_random_uuid(),
+  player_id uuid references public.players(id) on delete set null,
+  pseudo text,
+  pseudo_key text generated always as (lower(trim(coalesce(pseudo, '')))) stored,
+  avatar text not null default 'avatar-1',
+  message text not null check (char_length(trim(message)) between 3 and 1200),
+  status text not null default 'new' check (status in ('new', 'done')),
+  created_at timestamptz not null default now(),
+  handled_at timestamptz
+);
+
 alter table public.scores
   add column if not exists player_id uuid references public.players(id) on delete set null;
 
@@ -125,6 +137,8 @@ alter table public.chat_messages
   add column if not exists reported_at timestamptz;
 
 create index if not exists devblog_posts_created_at_idx on public.devblog_posts (created_at desc);
+create index if not exists feedback_messages_created_at_idx on public.feedback_messages (created_at desc);
+create index if not exists feedback_messages_status_idx on public.feedback_messages (status, created_at desc);
 
 create index if not exists votes_game_id_idx on public.votes (game_id);
 create index if not exists questions_category_idx on public.questions (category);
@@ -140,6 +154,7 @@ alter table public.blocked_pseudos enable row level security;
 alter table public.players enable row level security;
 alter table public.chat_messages enable row level security;
 alter table public.devblog_posts enable row level security;
+alter table public.feedback_messages enable row level security;
 
 drop view if exists public.leaderboard_level;
 drop view if exists public.leaderboard_streak;

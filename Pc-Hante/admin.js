@@ -12,6 +12,7 @@ const blockPseudo = document.getElementById("blockPseudo");
 const blockReason = document.getElementById("blockReason");
 const blockedList = document.getElementById("blockedList");
 const reportsList = document.getElementById("reportsList");
+const feedbackList = document.getElementById("feedbackList");
 const devblogForm = document.getElementById("devblogForm");
 const devblogTitle = document.getElementById("devblogTitle");
 const devblogContent = document.getElementById("devblogContent");
@@ -84,6 +85,7 @@ function renderStats(stats) {
     <article><strong>${stats.questions ?? 0}</strong><span>questions</span></article>
     <article><strong>${stats.chatMessages ?? 0}</strong><span>messages chat</span></article>
     <article><strong>${stats.reports ?? 0}</strong><span>signalements</span></article>
+    <article><strong>${stats.feedback ?? 0}</strong><span>avis nouveaux</span></article>
   `;
 
   const blocked = stats.blocked || [];
@@ -113,6 +115,24 @@ function renderReports(reports) {
       </article>
     `).join("")
     : "<p class=\"empty-state\">Aucun message signale.</p>";
+}
+
+function renderFeedback(feedback) {
+  feedbackList.innerHTML = feedback.length
+    ? feedback.map((entry) => `
+      <article class="blocked-row feedback-row ${entry.status === "done" ? "done" : ""}">
+        <span>
+          <strong>${escapeHtml(entry.pseudo || "Anonyme")} ${entry.status === "done" ? "- traite" : "- nouveau"}</strong>
+          <br>${escapeHtml(entry.message)}
+          <br><small>${formatDate(entry.created_at)}</small>
+        </span>
+        <span class="report-actions">
+          <button class="secondary-button compact-admin" type="button" data-mark-feedback="${entry.id}" data-done="${entry.status !== "done"}">${entry.status === "done" ? "Remettre nouveau" : "Marquer traite"}</button>
+          <button class="delete-button" type="button" data-delete-feedback="${entry.id}">Supprimer</button>
+        </span>
+      </article>
+    `).join("")
+    : "<p class=\"empty-state\">Aucun avis joueur.</p>";
 }
 
 function renderDevblog(posts) {
@@ -168,16 +188,18 @@ function escapeHtml(value) {
 
 async function loadScores() {
   setStatus("Chargement...");
-  const [scoresData, statsData, questionsData, reportsData, devblogData] = await Promise.all([
+  const [scoresData, statsData, questionsData, reportsData, feedbackData, devblogData] = await Promise.all([
     adminApi("/api/admin/scores"),
     adminApi("/api/admin/stats"),
     adminApi(`/api/admin/questions?search=${encodeURIComponent(questionSearch.value.trim())}`),
     adminApi("/api/admin/reports"),
+    adminApi("/api/admin/feedback"),
     adminApi("/api/devblog")
   ]);
   renderStats(statsData);
   renderQuestions(questionsData.questions);
   renderReports(reportsData.reports || []);
+  renderFeedback(feedbackData.feedback || []);
   renderDevblog(devblogData.posts || []);
   const data = scoresData;
   renderScores(data.scores);
@@ -292,6 +314,36 @@ reportsList.addEventListener("click", async (event) => {
       await adminApi("/api/admin/clear-report", {
         method: "POST",
         body: JSON.stringify({ id: clearButton.dataset.clearReport })
+      });
+      await loadScores();
+    }
+  } catch (error) {
+    setStatus(error.message);
+  }
+});
+
+feedbackList.addEventListener("click", async (event) => {
+  const markButton = event.target.closest("[data-mark-feedback]");
+  const deleteButton = event.target.closest("[data-delete-feedback]");
+
+  try {
+    if (markButton) {
+      await adminApi("/api/admin/mark-feedback", {
+        method: "POST",
+        body: JSON.stringify({
+          id: markButton.dataset.markFeedback,
+          done: markButton.dataset.done === "true"
+        })
+      });
+      await loadScores();
+      return;
+    }
+
+    if (deleteButton) {
+      if (!confirm("Supprimer cet avis ?")) return;
+      await adminApi("/api/admin/delete-feedback", {
+        method: "POST",
+        body: JSON.stringify({ id: deleteButton.dataset.deleteFeedback })
       });
       await loadScores();
     }
