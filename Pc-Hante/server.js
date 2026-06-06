@@ -14,6 +14,15 @@ const SCORES_FILE = path.join(DATA_DIR, "scores.json");
 const SESSIONS_FILE = path.join(DATA_DIR, "sessions.json");
 const PRESENCE = new Map();
 
+const GAME_MODES = [
+  { id: "test", title: "Test local", subtitle: "Mode rapide pour tester les cartes" },
+  { id: "food", title: "Nourriture", subtitle: "Plats, snacks et plaisirs coupables" },
+  { id: "movies", title: "Films cultes", subtitle: "Les classiques que tout le monde connait" },
+  { id: "series", title: "Series", subtitle: "Binge-watch et gros debats" },
+  { id: "games", title: "Jeux video", subtitle: "Manettes, PC et rivalites eternelles" },
+  { id: "music", title: "Musique", subtitle: "Artistes, styles et habitudes d'ecoute" }
+];
+
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -563,7 +572,8 @@ function getMajority(question) {
 
 function pointsFor(question, choice) {
   const majorityChoice = getMajority(question);
-  if (!majorityChoice || choice !== majorityChoice) return 0;
+  if (!majorityChoice) return 1;
+  if (choice !== majorityChoice) return 0;
   const pct = percentages(question.votesA, question.votesB)[majorityChoice];
   return pct >= 51 && pct <= 55 ? 2 : 1;
 }
@@ -636,10 +646,73 @@ function rankForPseudo(pseudo) {
   return aggregateScores("global").findIndex((entry) => normalizePseudo(entry.pseudo) === key) + 1;
 }
 
+function localProfile(pseudo, avatar = "avatar-1") {
+  const key = normalizePseudo(pseudo);
+  const scores = readJson(SCORES_FILE).filter((score) => normalizePseudo(score.pseudo) === key);
+  const totalCorrect = scores.reduce((sum, score) => sum + Number(score.correct || 0), 0);
+  const totalQuestions = scores.reduce((sum, score) => sum + Number(score.total || 0), 0);
+  const totalScore = scores.reduce((sum, score) => sum + Number(score.score || 0), 0);
+  const gamesPlayed = scores.length;
+  const xp = gamesPlayed * 180 + totalCorrect * 12 + totalScore * 6;
+  const level = Math.max(1, Math.floor(Math.sqrt(xp / 120)) + 1);
+
+  return {
+    pseudo,
+    avatar,
+    level,
+    xp,
+    rank: rankForPseudo(pseudo) || 0,
+    levelRank: 0,
+    gamesPlayed,
+    totalScore,
+    totalCorrect,
+    totalQuestions,
+    successRate: totalQuestions ? Number(((totalCorrect / totalQuestions) * 100).toFixed(1)) : 0,
+    averageScore: gamesPlayed ? Number((totalScore / gamesPlayed).toFixed(1)) : 0,
+    bestGamePercent: scores.reduce((best, score) => Math.max(best, Number(score.successRate || 0)), 0),
+    bestStreak: scores.reduce((best, score) => Math.max(best, Number(score.bestStreak || 0)), 0),
+    tieVotes: 0,
+    chatMessages: 0,
+    lastPlayedAt: scores[0]?.createdAt || null
+  };
+}
+
 async function handleApi(request, response, url) {
   try {
+    if (request.method === "GET" && url.pathname === "/api/modes") {
+      sendJson(response, 200, {
+        modes: GAME_MODES.map((mode) => ({
+          ...mode,
+          totalQuestions: publicQuestions().length,
+          completed: false,
+          locked: false
+        }))
+      });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/player") {
+      const pseudo = String(url.searchParams.get("pseudo") || "Testeur").trim().slice(0, 18);
+      sendJson(response, 200, { profile: localProfile(pseudo) });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/player/register") {
+      const body = await parseBody(request);
+      const playerId = String(body.playerId || `local-${Date.now()}`);
+      const pseudo = String(body.pseudo || "Testeur").trim().slice(0, 18);
+      const avatar = String(body.avatar || "avatar-1");
+      sendJson(response, 200, {
+        playerId,
+        pseudo,
+        avatar,
+        profile: localProfile(pseudo, avatar)
+      });
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/questions") {
-      sendJson(response, 200, { questions: publicQuestions() });
+      sendJson(response, 200, { mode: url.searchParams.get("mode") || "test", questions: publicQuestions() });
       return;
     }
 

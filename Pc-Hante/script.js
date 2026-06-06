@@ -1,4 +1,5 @@
 const TOTAL_QUESTIONS = 25;
+const SAVED_ROUND_KEY = "majorite_saved_round";
 const AVATARS = [
   { id: "avatar-1", name: "Renard", src: "assets/avatars/avatar-1.svg" },
   { id: "avatar-2", name: "Panda", src: "assets/avatars/avatar-2.svg" },
@@ -57,6 +58,7 @@ const ACHIEVEMENTS = [
   { id: "ten_games", title: "10 modes", text: "Terminer 10 modes avec le meme pseudo.", check: (profile) => profile.gamesPlayed >= 10 },
   { id: "streak_5", title: "Serie x5", text: "Faire 5 bonnes reponses d'affilee.", check: (profile) => profile.bestStreak >= 5 },
   { id: "streak_10", title: "Serie x10", text: "Faire 10 bonnes reponses d'affilee.", check: (profile) => profile.bestStreak >= 10 },
+  { id: "tie_3", title: "Equilibriste", text: "Tomber sur 3 egalites parfaites a 50/50.", check: (profile) => profile.tieVotes >= 3 },
   { id: "perfect_game", title: "Partie parfaite", text: "Finir une partie a 100%.", check: (profile) => profile.bestGamePercent >= 100 },
   { id: "strong_game", title: "Lecteur solide", text: "Faire au moins 80% sur une partie.", check: (profile) => profile.bestGamePercent >= 80 },
   { id: "regular", title: "Tour complet", text: "Terminer les 14 modes disponibles.", check: (profile) => profile.gamesPlayed >= 14 },
@@ -153,6 +155,7 @@ const state = {
   correct: 0,
   currentStreak: 0,
   bestStreak: 0,
+  tieCount: 0,
   votes: [],
   votedQuestionIds: new Set(),
   gameId: "",
@@ -186,6 +189,104 @@ function getPlayerId() {
     localStorage.setItem("majorite_player_id", state.playerId);
   }
   return state.playerId;
+}
+
+function tieCountKey(pseudo = state.playerPseudo) {
+  return `majorite_ties_${String(pseudo || "").toLowerCase()}`;
+}
+
+function getLocalTieCount(pseudo = state.playerPseudo) {
+  return Number(localStorage.getItem(tieCountKey(pseudo)) || 0);
+}
+
+function addLocalTie(pseudo = state.playerPseudo) {
+  const nextCount = getLocalTieCount(pseudo) + 1;
+  localStorage.setItem(tieCountKey(pseudo), String(nextCount));
+  return nextCount;
+}
+
+function withLocalStats(profile = {}) {
+  const pseudo = profile.pseudo || state.playerPseudo || localStorage.getItem("majorite_pseudo") || "";
+  return {
+    ...profile,
+    tieVotes: Math.max(Number(profile.tieVotes || 0), getLocalTieCount(pseudo))
+  };
+}
+
+function getSavedRound() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SAVED_ROUND_KEY) || "null");
+    if (!saved || !saved.gameId || !saved.questions?.length) return null;
+    const pseudo = state.playerPseudo || localStorage.getItem("majorite_pseudo") || "";
+    if (saved.pseudo && pseudo && saved.pseudo !== pseudo) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+function saveActiveRound() {
+  if (!state.gameId || !state.questions.length || state.saved || state.currentIndex >= TOTAL_QUESTIONS) return;
+  localStorage.setItem(SAVED_ROUND_KEY, JSON.stringify({
+    gameId: state.gameId,
+    pseudo: state.playerPseudo,
+    playerId: state.playerId,
+    avatar: state.playerAvatar,
+    selectedMode: state.selectedMode,
+    questions: state.questions,
+    currentIndex: state.currentIndex,
+    score: state.score,
+    correct: state.correct,
+    currentStreak: state.currentStreak,
+    bestStreak: state.bestStreak,
+    tieCount: state.tieCount,
+    votes: state.votes,
+    votedQuestionIds: [...state.votedQuestionIds],
+    savedAt: new Date().toISOString()
+  }));
+}
+
+function clearSavedRound() {
+  localStorage.removeItem(SAVED_ROUND_KEY);
+}
+
+function restoreSavedRound() {
+  const saved = getSavedRound();
+  if (!saved) {
+    showToast("Aucune partie a reprendre.");
+    return;
+  }
+
+  state.gameId = saved.gameId;
+  state.playerPseudo = saved.pseudo || state.playerPseudo;
+  state.playerId = saved.playerId || state.playerId;
+  state.playerAvatar = saved.avatar || state.playerAvatar;
+  state.selectedMode = saved.selectedMode;
+  state.questions = saved.questions;
+  state.currentIndex = Number(saved.currentIndex || 0);
+  state.score = Number(saved.score || 0);
+  state.correct = Number(saved.correct || 0);
+  state.currentStreak = Number(saved.currentStreak || 0);
+  state.bestStreak = Number(saved.bestStreak || 0);
+  state.tieCount = Number(saved.tieCount || 0);
+  state.votes = saved.votes || [];
+  state.votedQuestionIds = new Set(saved.votedQuestionIds || []);
+  state.saved = false;
+  state.rank = null;
+
+  const currentQuestion = state.questions[state.currentIndex];
+  if (currentQuestion && state.votedQuestionIds.has(currentQuestion.id) && state.currentIndex < TOTAL_QUESTIONS - 1) {
+    state.currentIndex += 1;
+    saveActiveRound();
+  }
+
+  showScreen("game");
+  renderQuestion();
+}
+
+function resetGameScroll() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  document.querySelector(".app-shell")?.scrollTo?.({ top: 0, behavior: "smooth" });
 }
 
 function showScreen(name) {
@@ -326,6 +427,27 @@ function playTone(success) {
   }
 }
 
+function triggerStreakFeedback(isCorrect, isTie = false) {
+  document.body.classList.remove("streak-warm", "streak-hot", "streak-fire", "streak-mania");
+  if (!isCorrect || isTie || state.currentStreak < 2) return;
+
+  const level = state.currentStreak >= 10
+    ? "streak-mania"
+    : state.currentStreak >= 7
+      ? "streak-fire"
+      : state.currentStreak >= 4
+        ? "streak-hot"
+        : "streak-warm";
+  document.body.classList.add(level);
+  window.setTimeout(() => document.body.classList.remove(level), 900);
+
+  const burst = document.createElement("div");
+  burst.className = `streak-burst ${level}`;
+  burst.textContent = `STREAK x${state.currentStreak}`;
+  document.body.appendChild(burst);
+  window.setTimeout(() => burst.remove(), 1050);
+}
+
 async function loadHomeTop() {
   if (!ui.homeTopList) return;
   try {
@@ -338,7 +460,7 @@ async function loadHomeTop() {
     ui.homeTopList.innerHTML = leaders.map((leader, index) => `
       <li>
         <span class="top-rank">#${index + 1}</span>
-        <span class="top-player">${avatarHtml(leader.avatar, "avatar-mini")} ${escapeHtml(leader.pseudo)}</span>
+        <button class="top-player" type="button" data-profile="${escapeHtml(leader.pseudo)}">${avatarHtml(leader.avatar, "avatar-mini")} ${escapeHtml(leader.pseudo)}</button>
         <strong>${formatPercent(leader.successRate)}</strong>
       </li>
     `).join("");
@@ -574,7 +696,16 @@ function renderModes() {
     ? `${available} mode(s) disponible(s). Termine un mode pour le verrouiller.`
     : "Tu as termine tous les modes disponibles. Bravo, il faudra attendre une nouvelle mise a jour.";
 
-  ui.modeGrid.innerHTML = state.modes.map((mode) => {
+  const savedRound = getSavedRound();
+  const resumeCard = savedRound ? `
+    <button class="mode-card resume-card" type="button" data-resume-round>
+      <span class="mode-kicker">Partie en cours</span>
+      <strong>Reprendre la serie</strong>
+      <small>Question ${Number(savedRound.currentIndex || 0) + 1}/${TOTAL_QUESTIONS} - ${Number(savedRound.score || 0)} point(s)</small>
+    </button>
+  ` : "";
+
+  ui.modeGrid.innerHTML = resumeCard + state.modes.map((mode) => {
     const notReady = Number(mode.totalQuestions || 0) < TOTAL_QUESTIONS;
     const locked = mode.locked || notReady;
     return `
@@ -616,6 +747,7 @@ async function startGame(modeId) {
     state.correct = 0;
     state.currentStreak = 0;
     state.bestStreak = 0;
+    state.tieCount = 0;
     state.votes = [];
     state.votedQuestionIds = new Set();
     state.gameId = createGameId();
@@ -628,6 +760,7 @@ async function startGame(modeId) {
     ui.saveStatus.textContent = "";
     document.body.classList.remove("answer-good", "answer-bad");
     showScreen("game");
+    saveActiveRound();
     renderQuestion();
   } catch (error) {
     showToast(error.message);
@@ -639,6 +772,7 @@ function renderQuestion() {
   const currentNumber = state.currentIndex + 1;
   const progress = (currentNumber / TOTAL_QUESTIONS) * 100;
 
+  resetGameScroll();
   ui.questionCounter.textContent = `Question ${currentNumber}/${TOTAL_QUESTIONS}`;
   ui.progressBar.style.width = `${progress}%`;
   ui.liveScore.textContent = state.score;
@@ -693,6 +827,7 @@ function applyVoteResult(result, choice) {
   const pctA = result.percentages.A;
   const pctB = result.percentages.B;
   const majorityChoice = result.majorityChoice;
+  const isTie = !majorityChoice;
   const isCorrect = result.isCorrect;
   const points = result.points;
 
@@ -700,18 +835,25 @@ function applyVoteResult(result, choice) {
   state.correct += isCorrect ? 1 : 0;
   state.currentStreak = isCorrect ? state.currentStreak + 1 : 0;
   state.bestStreak = Math.max(state.bestStreak, state.currentStreak);
-  state.votes.push({ questionId: result.questionId, choice, majorityChoice, points, streak: state.currentStreak });
+  if (isTie) {
+    state.tieCount += 1;
+    addLocalTie();
+  }
+  state.votes.push({ questionId: result.questionId, choice, majorityChoice, points, streak: state.currentStreak, tie: isTie });
   ui.liveScore.textContent = state.score;
   ui.liveStreak.textContent = state.currentStreak;
   document.body.classList.remove("answer-good", "answer-bad");
   document.body.classList.add(isCorrect ? "answer-good" : "answer-bad");
   window.setTimeout(() => document.body.classList.remove("answer-good", "answer-bad"), 420);
   playTone(isCorrect);
+  triggerStreakFeedback(isCorrect, isTie);
 
-  revealChoice(ui.choiceA, pctA, majorityChoice === "A");
-  revealChoice(ui.choiceB, pctB, majorityChoice === "B");
+  revealChoice(ui.choiceA, pctA, result.votesA, majorityChoice === "A", isTie);
+  revealChoice(ui.choiceB, pctB, result.votesB, majorityChoice === "B", isTie);
 
-  ui.feedback.textContent = isCorrect
+  ui.feedback.textContent = isTie
+    ? "Egalite parfaite 50/50 : +1 point pour tout le monde."
+    : isCorrect
     ? points === 2
       ? "Majorit\u00e9 trouvee sur une question serree : +2 points."
       : state.currentStreak >= 5
@@ -720,21 +862,25 @@ function applyVoteResult(result, choice) {
     : "Minorite choisie : 0 point.";
   ui.feedback.className = `feedback ${isCorrect ? "positive" : "negative"}`;
   ui.nextButton.classList.remove("hidden");
+  saveActiveRound();
 }
 
-function revealChoice(button, percent, isMajority) {
+function revealChoice(button, percent, votes, isMajority, isTie = false) {
   button.classList.add("revealed");
-  if (isMajority) button.classList.add("majority");
+  if (isMajority || isTie) button.classList.add("majority");
+  if (isTie) button.classList.add("tie");
   button.querySelector(".result-bar").style.width = `${percent}%`;
   button.querySelector(".result-percent").textContent = `${percent}%`;
-  button.querySelector(".result-tag").textContent = isMajority ? "Majorit\u00e9" : "Minorit\u00e9";
+  button.querySelector(".result-tag").textContent = `${isTie ? "Egalite" : isMajority ? "Majorite" : "Minorite"} - ${votes} vote${votes > 1 ? "s" : ""}`;
 }
 
 function nextQuestion() {
   if (state.currentIndex < TOTAL_QUESTIONS - 1) {
     state.currentIndex += 1;
+    saveActiveRound();
     renderQuestion();
   } else {
+    clearSavedRound();
     renderEndScreen();
   }
 }
@@ -869,8 +1015,9 @@ async function loadAchievements() {
 
   try {
     const data = await api(`/api/player?pseudo=${encodeURIComponent(pseudo)}`);
-    ui.achievementsStatus.textContent = `${data.profile.pseudo} - Rang #${data.profile.rank || "-"} - ${data.profile.gamesPlayed} partie(s).`;
-    renderAchievementsList(data.profile, ui.achievementsList);
+    const profile = withLocalStats(data.profile);
+    ui.achievementsStatus.textContent = `${profile.pseudo} - Rang #${profile.rank || "-"} - ${profile.gamesPlayed} partie(s).`;
+    renderAchievementsList(profile, ui.achievementsList);
   } catch (error) {
     ui.achievementsStatus.textContent = error.message;
     renderAchievementsList({}, ui.achievementsList);
@@ -908,7 +1055,9 @@ function renderLeaderboard(entries) {
     <li class="${state.leaderboardMode === "level" ? "level-leader-row" : ""}">
       <span class="rank">#${index + 1}</span>
       <span>
-        <span class="leader-name">${avatarHtml(entry.avatar, "avatar-mini")} ${levelBadge(entry.level)} ${escapeHtml(entry.pseudo)}</span>
+        <button class="leader-profile-button" type="button" data-profile="${escapeHtml(entry.pseudo)}">
+          <span class="leader-name">${avatarHtml(entry.avatar, "avatar-mini")} ${levelBadge(entry.level)} ${escapeHtml(entry.pseudo)}</span>
+        </button>
         <span class="leader-meta">${leaderboardMeta(entry)}</span>
         ${state.leaderboardMode === "level" ? levelMiniProgress(entry) : ""}
       </span>
@@ -1077,7 +1226,7 @@ async function openPlayerProfile(pseudo) {
 
   try {
     const data = await api(`/api/player?pseudo=${encodeURIComponent(pseudo)}`);
-    const profile = data.profile;
+    const profile = withLocalStats(data.profile);
     ui.profileContent.innerHTML = `
       <header class="profile-header">
         ${avatarHtml(profile.avatar, "avatar-chip")}
@@ -1091,6 +1240,7 @@ async function openPlayerProfile(pseudo) {
         <article><strong>${profile.level || 1}</strong><span>niveau</span></article>
         <article><strong>${formatPercent(profile.successRate || 0)}</strong><span>reussite</span></article>
         <article><strong>x${profile.bestStreak || 0}</strong><span>streak</span></article>
+        <article><strong>${profile.tieVotes || 0}</strong><span>50/50</span></article>
         <article><strong>${profile.chatMessages || 0}</strong><span>messages</span></article>
       </div>
       <h3>Succes</h3>
@@ -1152,6 +1302,16 @@ ui.refreshLeaderboard.addEventListener("click", () => loadLeaderboard(state.lead
 ui.refreshAchievements.addEventListener("click", loadAchievements);
 ui.refreshModes.addEventListener("click", showModeSelection);
 ui.soundToggle.addEventListener("click", () => setSoundEnabled(!state.soundEnabled));
+ui.homeTopList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-profile]");
+  if (!button) return;
+  openPlayerProfile(button.dataset.profile);
+});
+ui.leaderboardList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-profile]");
+  if (!button) return;
+  openPlayerProfile(button.dataset.profile);
+});
 ui.avatarGrid.addEventListener("click", (event) => {
   const button = event.target.closest("[data-avatar]");
   if (!button) return;
@@ -1160,6 +1320,12 @@ ui.avatarGrid.addEventListener("click", (event) => {
   renderAvatarPicker();
 });
 ui.modeGrid.addEventListener("click", (event) => {
+  const resumeButton = event.target.closest("[data-resume-round]");
+  if (resumeButton) {
+    restoreSavedRound();
+    return;
+  }
+
   const button = event.target.closest("[data-mode]");
   if (!button || button.disabled) return;
   startGame(button.dataset.mode);
@@ -1213,6 +1379,9 @@ setSoundEnabled(state.soundEnabled);
 loadHomeTop();
 loadHomeProfile();
 loadPresence(true);
+if (!localStorage.getItem("majorite_pseudo")) {
+  window.setTimeout(askPseudo, 350);
+}
 window.setInterval(() => {
   if (!ui.chatBox.classList.contains("hidden")) loadChat();
 }, 12000);

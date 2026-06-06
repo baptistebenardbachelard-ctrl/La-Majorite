@@ -172,7 +172,7 @@
     "question": "Tu peux choisir un seul super-pouvoir :",
     "choiceA": "Devenir invisible quand tu veux",
     "choiceB": "Te rendre totalement silencieux",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -268,7 +268,7 @@
     "question": "Tu peux choisir un seul super-pouvoir :",
     "choiceA": "Lire dans les pensees",
     "choiceB": "Controler tes reves",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -1004,7 +1004,7 @@
     "question": "Tu peux choisir un seul super-pouvoir :",
     "choiceA": "Voir 24 heures dans le futur",
     "choiceB": "Remonter 5 minutes dans le temps",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -1052,7 +1052,7 @@
     "question": "Tu peux choisir un seul super-pouvoir :",
     "choiceA": "Comprendre toutes les langues",
     "choiceB": "Respirer sous l'eau",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -1364,7 +1364,7 @@
     "question": "Tu peux choisir un seul super-pouvoir :",
     "choiceA": "Changer d'apparence a volonte",
     "choiceB": "Trouver n'importe quel objet perdu",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -2028,7 +2028,7 @@
     "question": "Tu peux choisir un seul super-pouvoir :",
     "choiceA": "Changer la meteo autour de toi",
     "choiceB": "Faire apparaitre ton plat prefere",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -3380,7 +3380,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Avoir toujours 8 heures de sommeil parfait",
     "choiceB": "Avoir une energie stable toute la journee",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4036,7 +4036,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Avoir un assistant personnel 2 heures par jour",
     "choiceB": "Avoir toujours une place assise",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4084,7 +4084,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Recevoir un conseil utile chaque matin",
     "choiceB": "Ne plus jamais faire de paperasse",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4252,7 +4252,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Avoir toujours le bon timing",
     "choiceB": "Trouver facilement les bons amis",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4412,7 +4412,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Avoir une cuisine toujours remplie",
     "choiceB": "Etre protege des arnaques",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4508,7 +4508,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Pouvoir prendre un mois de vacances par an",
     "choiceB": "Pouvoir recommencer une journee par an",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4564,7 +4564,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Trouver un travail qui te plait vraiment",
     "choiceB": "Avoir un logement dans la ville de ton choix",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4588,7 +4588,7 @@
     "question": "Tu dois choisir un avantage pour toute ta vie :",
     "choiceA": "Etre rembourse de tous tes achats rates",
     "choiceB": "Apprendre une competence deux fois plus vite",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -4852,7 +4852,7 @@
     "question": "Tu dois choisir un sacrifice acceptable :",
     "choiceA": "Ne plus jamais manger de chocolat",
     "choiceB": "Ne plus jamais dormir apres 9h",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -5316,7 +5316,7 @@
     "question": "Tu dois choisir un sacrifice acceptable :",
     "choiceA": "Ne plus jamais partir en avion",
     "choiceB": "Ne plus jamais faire de grasse matinee",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -5524,7 +5524,7 @@
     "question": "Tu dois choisir un sacrifice acceptable :",
     "choiceA": "Ne plus jamais regarder de series",
     "choiceB": "Ne plus jamais acheter de vetements neufs",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -6188,7 +6188,7 @@
     "question": "Tu dois choisir un sacrifice acceptable :",
     "choiceA": "Ne plus jamais commander a manger",
     "choiceB": "Ne plus jamais porter ta couleur preferee",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -6300,7 +6300,7 @@
     "question": "Tu dois choisir un sacrifice acceptable :",
     "choiceA": "Ne plus jamais utiliser d'emoji",
     "choiceB": "Ne plus jamais utiliser de GPS",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -6380,7 +6380,7 @@
     "question": "Tu dois choisir un sacrifice acceptable :",
     "choiceA": "Ne plus jamais mentir, meme pour etre gentil",
     "choiceB": "Ne plus jamais jouer aux jeux video",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -6508,7 +6508,7 @@
     "question": "Tu dois choisir un sacrifice acceptable :",
     "choiceA": "Ne plus jamais prendre de photos",
     "choiceB": "Ne plus jamais pouvoir annuler un plan",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -7197,7 +7197,7 @@
     "choiceA": "Ne plus jamais dire 'je t'avais dit'",
     "choiceB": "Ne plus jamais avoir de notifications",
     "votesA": 0,
-    "votesB": 0
+    "votesB": 1
   },
   {
     "id": "q901",
@@ -7236,7 +7236,7 @@
     "question": "Tu dois choisir une verite a connaitre :",
     "choiceA": "Ce que les gens pensent vraiment de toi",
     "choiceB": "Le moment ou tu seras le plus heureux",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -7404,7 +7404,7 @@
     "question": "Tu dois choisir une verite a connaitre :",
     "choiceA": "La date exacte de ta mort",
     "choiceB": "La pire decision de ta vie",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {
@@ -7668,7 +7668,7 @@
     "question": "Tu dois choisir une verite a connaitre :",
     "choiceA": "La personne qui t'aime le plus",
     "choiceB": "La personne a qui tu devrais pardonner",
-    "votesA": 0,
+    "votesA": 1,
     "votesB": 0
   },
   {

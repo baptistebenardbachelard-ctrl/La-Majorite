@@ -72,10 +72,15 @@
 
         <section class="admin-section">
           <h2>Questions</h2>
-          <form id="questionSearchForm" class="admin-inline-form">
-            <input id="questionSearch" type="text" placeholder="Chercher une question">
-            <button class="secondary-button" type="submit">Chercher</button>
-          </form>
+          <div class="admin-question-toolbar">
+            <label for="questionModeFilter">Mode</label>
+            <select id="questionModeFilter">
+              <option value="">Choisir un mode</option>
+            </select>
+            <input id="questionSearch" type="text" placeholder="Filtrer les questions de ce mode">
+            <button id="refreshQuestions" class="secondary-button" type="button">Charger</button>
+          </div>
+          <p class="admin-hint">Choisis d'abord un mode. Ensuite clique sur une question pour ouvrir ses details, modifier les choix ou reset ses votes.</p>
           <div id="questionsList" class="admin-list"></div>
         </section>
 

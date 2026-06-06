@@ -176,6 +176,13 @@ select
   round(avg(s.score), 1) as average_score,
   max(s.success_rate) as best_game_percent,
   max(s.best_streak)::integer as best_streak,
+  coalesce((
+    select count(*)::integer
+    from public.votes v
+    join public.scores sv on sv.game_id = v.game_id
+    where sv.pseudo_key = s.pseudo_key
+      and v.majority_choice is null
+  ), 0)::integer as tie_votes,
   max(s.created_at) as last_played_at
 from public.scores s
 left join public.players p on p.pseudo_key = s.pseudo_key
@@ -197,6 +204,14 @@ select
   round(avg(s.score), 1) as average_score,
   max(s.success_rate) as best_game_percent,
   max(s.best_streak)::integer as best_streak,
+  coalesce((
+    select count(*)::integer
+    from public.votes v
+    join public.scores sv on sv.game_id = v.game_id
+    where sv.pseudo_key = s.pseudo_key
+      and sv.day = ((timezone('Europe/Paris', now()))::date)
+      and v.majority_choice is null
+  ), 0)::integer as tie_votes,
   max(s.created_at) as last_played_at
 from public.scores s
 left join public.players p on p.pseudo_key = s.pseudo_key
@@ -219,6 +234,13 @@ select
   round(avg(s.score), 1) as average_score,
   max(s.success_rate) as best_game_percent,
   max(s.best_streak)::integer as best_streak,
+  coalesce((
+    select count(*)::integer
+    from public.votes v
+    join public.scores sv on sv.game_id = v.game_id
+    where sv.pseudo_key = s.pseudo_key
+      and v.majority_choice is null
+  ), 0)::integer as tie_votes,
   max(s.created_at) as last_played_at
 from public.scores s
 left join public.players p on p.pseudo_key = s.pseudo_key
@@ -240,6 +262,13 @@ select
   coalesce(round(avg(s.score), 1), 0) as average_score,
   coalesce(max(s.success_rate), 0) as best_game_percent,
   coalesce(max(s.best_streak), 0)::integer as best_streak,
+  coalesce((
+    select count(*)::integer
+    from public.votes v
+    join public.scores sv on sv.game_id = v.game_id
+    where sv.player_id = p.id
+      and v.majority_choice is null
+  ), 0)::integer as tie_votes,
   max(coalesce(s.created_at, p.last_seen_at)) as last_played_at
 from public.players p
 left join public.scores s on s.player_id = p.id
@@ -305,7 +334,9 @@ begin
     v_majority_percent := 50;
   end if;
 
-  if v_majority is not null and p_choice = v_majority then
+  if v_majority is null then
+    v_points := 1;
+  elsif p_choice = v_majority then
     if v_majority_percent between 51 and 55 then
       v_points := 2;
     else

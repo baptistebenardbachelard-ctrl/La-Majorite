@@ -17,12 +17,30 @@ const devblogForm = document.getElementById("devblogForm");
 const devblogTitle = document.getElementById("devblogTitle");
 const devblogContent = document.getElementById("devblogContent");
 const devblogList = document.getElementById("devblogList");
-const questionSearchForm = document.getElementById("questionSearchForm");
+const questionModeFilter = document.getElementById("questionModeFilter");
 const questionSearch = document.getElementById("questionSearch");
+const refreshQuestions = document.getElementById("refreshQuestions");
 const questionsList = document.getElementById("questionsList");
 
 let adminToken = localStorage.getItem("majorite_admin_token") || "";
 tokenInput.value = adminToken;
+
+const ADMIN_MODES = [
+  { id: "food", title: "Nourriture" },
+  { id: "movies", title: "Films cultes" },
+  { id: "series", title: "Series" },
+  { id: "games", title: "Jeux video" },
+  { id: "music", title: "Musique" },
+  { id: "social", title: "Reseaux sociaux" },
+  { id: "love", title: "Amour" },
+  { id: "school_work", title: "Ecole / travail" },
+  { id: "daily", title: "Vie quotidienne" },
+  { id: "powers", title: "Super-pouvoirs" },
+  { id: "money", title: "Argent / luxe" },
+  { id: "impossible", title: "Impossible" },
+  { id: "awkward", title: "Genant" },
+  { id: "internet", title: "Generation Internet" }
+];
 
 function setStatus(message) {
   adminStatus.textContent = message;
@@ -149,6 +167,13 @@ function renderDevblog(posts) {
     : "<p class=\"empty-state\">Aucun post devblog.</p>";
 }
 
+function renderQuestionModeOptions() {
+  questionModeFilter.innerHTML = `
+    <option value="">Choisir un mode</option>
+    ${ADMIN_MODES.map((mode) => `<option value="${escapeHtml(mode.id)}">${escapeHtml(mode.title)}</option>`).join("")}
+  `;
+}
+
 function renderQuestions(questions) {
   if (!questions.length) {
     questionsList.innerHTML = "<p class=\"empty-state\">Aucune question trouvee.</p>";
@@ -157,21 +182,31 @@ function renderQuestions(questions) {
 
   questionsList.innerHTML = questions.map((question) => `
     <article class="admin-question" data-question-id="${escapeHtml(question.id)}">
-      <div class="question-meta">
-        <strong>${escapeHtml(question.id)}</strong>
-        <span>${escapeHtml(question.category || "general")} - ${question.votes_a}/${question.votes_b} votes</span>
-      </div>
-      <label>Mode</label>
-      <input data-field="category" value="${escapeHtml(question.category || "general")}">
-      <label>Question</label>
-      <textarea data-field="question">${escapeHtml(question.question)}</textarea>
-      <label>Choix A</label>
-      <input data-field="choiceA" value="${escapeHtml(question.choice_a)}">
-      <label>Choix B</label>
-      <input data-field="choiceB" value="${escapeHtml(question.choice_b)}">
-      <div class="admin-actions small-actions">
-        <button class="secondary-button" type="button" data-save-question>Enregistrer</button>
-        <button class="ghost-button danger-action" type="button" data-reset-question>Reset question</button>
+      <button class="admin-question-summary" type="button" data-toggle-question>
+        <span>
+          <strong>${escapeHtml(question.question)}</strong>
+          <small>${escapeHtml(question.id)} - ${question.votes_a}/${question.votes_b} votes</small>
+        </span>
+        <span class="summary-chevron">+</span>
+      </button>
+      <div class="admin-question-detail">
+        <label>Mode</label>
+        <input data-field="category" value="${escapeHtml(question.category || "general")}">
+        <label>Question</label>
+        <textarea data-field="question">${escapeHtml(question.question)}</textarea>
+        <label>Choix A</label>
+        <input data-field="choiceA" value="${escapeHtml(question.choice_a)}">
+        <label>Choix B</label>
+        <input data-field="choiceB" value="${escapeHtml(question.choice_b)}">
+        <div class="question-vote-row">
+          <span>A : ${question.votes_a} votes</span>
+          <span>B : ${question.votes_b} votes</span>
+          <span>Base : ${question.seed_votes_a || 0}/${question.seed_votes_b || 0}</span>
+        </div>
+        <div class="admin-actions small-actions">
+          <button class="secondary-button" type="button" data-save-question>Enregistrer</button>
+          <button class="ghost-button danger-action" type="button" data-reset-question>Reset question</button>
+        </div>
       </div>
     </article>
   `).join("");
@@ -188,22 +223,40 @@ function escapeHtml(value) {
 
 async function loadScores() {
   setStatus("Chargement...");
-  const [scoresData, statsData, questionsData, reportsData, feedbackData, devblogData] = await Promise.all([
+  const [scoresData, statsData, reportsData, feedbackData, devblogData] = await Promise.all([
     adminApi("/api/admin/scores"),
     adminApi("/api/admin/stats"),
-    adminApi(`/api/admin/questions?search=${encodeURIComponent(questionSearch.value.trim())}`),
     adminApi("/api/admin/reports"),
     adminApi("/api/admin/feedback"),
     adminApi("/api/devblog")
   ]);
   renderStats(statsData);
-  renderQuestions(questionsData.questions);
   renderReports(reportsData.reports || []);
   renderFeedback(feedbackData.feedback || []);
   renderDevblog(devblogData.posts || []);
   const data = scoresData;
   renderScores(data.scores);
   setStatus(`${data.scores.length} score(s) charge(s).`);
+}
+
+async function loadQuestions() {
+  const mode = questionModeFilter.value;
+  if (!mode) {
+    questionsList.innerHTML = "<p class=\"empty-state\">Choisis un mode pour afficher ses questions.</p>";
+    return;
+  }
+
+  questionsList.innerHTML = "<p class=\"empty-state\">Chargement des questions...</p>";
+  const params = new URLSearchParams({
+    mode,
+    limit: "100"
+  });
+  const search = questionSearch.value.trim();
+  if (search) params.set("search", search);
+
+  const data = await adminApi(`/api/admin/questions?${params.toString()}`);
+  renderQuestions(data.questions || []);
+  setStatus(`${(data.questions || []).length} question(s) chargee(s) pour ce mode.`);
 }
 
 loginForm.addEventListener("submit", async (event) => {
@@ -386,15 +439,32 @@ devblogList.addEventListener("click", async (event) => {
   }
 });
 
-questionSearchForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  loadScores().catch((error) => setStatus(error.message));
+renderQuestionModeOptions();
+
+refreshQuestions.addEventListener("click", () => {
+  loadQuestions().catch((error) => setStatus(error.message));
+});
+
+questionModeFilter.addEventListener("change", () => {
+  loadQuestions().catch((error) => setStatus(error.message));
+});
+
+questionSearch.addEventListener("input", () => {
+  window.clearTimeout(questionSearch.timer);
+  questionSearch.timer = window.setTimeout(() => {
+    loadQuestions().catch((error) => setStatus(error.message));
+  }, 250);
 });
 
 questionsList.addEventListener("click", async (event) => {
   const card = event.target.closest("[data-question-id]");
   if (!card) return;
   const id = card.dataset.questionId;
+
+  if (event.target.closest("[data-toggle-question]")) {
+    card.classList.toggle("open");
+    return;
+  }
 
   if (event.target.closest("[data-reset-question]")) {
     if (!confirm("Reset les votes de cette question ?")) return;
@@ -403,7 +473,7 @@ questionsList.addEventListener("click", async (event) => {
         method: "POST",
         body: JSON.stringify({ id })
       });
-      await loadScores();
+      await loadQuestions();
     } catch (error) {
       setStatus(error.message);
     }
@@ -423,7 +493,7 @@ questionsList.addEventListener("click", async (event) => {
           choiceB: value("choiceB")
         })
       });
-      await loadScores();
+      await loadQuestions();
     } catch (error) {
       setStatus(error.message);
     }

@@ -196,7 +196,7 @@ async function getLeaderboard(event) {
         ? "leaderboard_level"
         : "leaderboard_global";
   const data = await supabaseFetch(
-    `/${view}?select=pseudo,avatar,level,xp,games_played,total_score,total_correct,total_questions,success_rate,average_score,best_game_percent,best_streak,last_played_at&limit=50`
+    `/${view}?select=pseudo,avatar,level,xp,games_played,total_score,total_correct,total_questions,success_rate,average_score,best_game_percent,best_streak,tie_votes,last_played_at&limit=50`
   );
 
   return json(200, {
@@ -213,6 +213,7 @@ async function getLeaderboard(event) {
       averageScore: Number(entry.average_score),
       bestGamePercent: Number(entry.best_game_percent),
       bestStreak: Number(entry.best_streak || 0),
+      tieVotes: Number(entry.tie_votes || 0),
       lastPlayedAt: entry.last_played_at
     }))
   });
@@ -401,7 +402,7 @@ async function getPlayerProfile(event) {
 
   const [profileRows, rankedRows, rankedLevelRows, chatRows] = await Promise.all([
     supabaseFetch(
-      `/leaderboard_global?select=pseudo_key,pseudo,avatar,level,xp,games_played,total_score,total_correct,total_questions,success_rate,average_score,best_game_percent,best_streak,last_played_at&pseudo_key=eq.${encodeURIComponent(pseudoKey)}&limit=1`
+      `/leaderboard_global?select=pseudo_key,pseudo,avatar,level,xp,games_played,total_score,total_correct,total_questions,success_rate,average_score,best_game_percent,best_streak,tie_votes,last_played_at&pseudo_key=eq.${encodeURIComponent(pseudoKey)}&limit=1`
     ),
     supabaseFetch("/leaderboard_global?select=pseudo_key&limit=1000"),
     supabaseFetch("/leaderboard_level?select=pseudo_key&limit=1000"),
@@ -429,6 +430,7 @@ async function getPlayerProfile(event) {
         averageScore: 0,
         bestGamePercent: 0,
         bestStreak: 0,
+        tieVotes: 0,
         chatMessages: chatRows.length,
         lastPlayedAt: null
       }
@@ -451,6 +453,7 @@ async function getPlayerProfile(event) {
       averageScore: Number(row.average_score),
       bestGamePercent: Number(row.best_game_percent),
       bestStreak: Number(row.best_streak || 0),
+      tieVotes: Number(row.tie_votes || 0),
       chatMessages: chatRows.length,
       lastPlayedAt: row.last_played_at
     }
@@ -619,8 +622,12 @@ async function adminDeleteDevblog(event) {
 async function adminQuestions(event) {
   requireAdmin(event);
   const search = String(event.queryStringParameters?.search || "").trim();
+  const mode = String(event.queryStringParameters?.mode || "").trim();
   const limit = Math.min(Number(event.queryStringParameters?.limit || 40), 100);
-  const filter = search ? `&question=ilike.*${encodeURIComponent(search)}*` : "";
+  const filters = [];
+  if (mode) filters.push(`category=eq.${encodeURIComponent(mode)}`);
+  if (search) filters.push(`question=ilike.*${encodeURIComponent(search)}*`);
+  const filter = filters.length ? `&${filters.join("&")}` : "";
   const data = await supabaseFetch(
     `/questions?select=id,category,question,choice_a,choice_b,votes_a,votes_b,seed_votes_a,seed_votes_b&order=id.asc&limit=${limit}${filter}`
   );
